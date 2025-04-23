@@ -169,3 +169,25 @@
     background: #5abac3;
     box-shadow: 0 4px 8px rgba(0,0,0,0.05);
   }
+
+  .side-by-side {
+    display: flex;
+    gap: 1rem; /* Space between the containers */
+    flex-wrap: wrap; /* Allows wrapping on smaller screens */
+    justify-content: space-between;
+    padding: 0 2rem;
+  }
+  
+  .side-by-side > div {
+    flex: 1; /* Make each child grow equally */
+    min-width: 300px; /* Prevent containers from getting too small */
+  }
+
+  .pop-hover {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .pop-hover:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  }
