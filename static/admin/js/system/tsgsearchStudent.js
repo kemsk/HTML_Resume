@@ -97,7 +97,7 @@ async function searchStudents() {
           photo: student.photo
         }));
         // Redirect to add violation page
-        window.location.href = '/admin/xu-entry-violation/create-ticket';
+        window.location.href = '/user/xu-entry-violation/create-ticket';
       });
 
       tableBody.appendChild(row);

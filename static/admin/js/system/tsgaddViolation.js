@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
             photo_name: photoName
         };
 
-        fetch("/admin/xu-entry-violation/create-ticket", {
+        fetch("/user/xu-entry-violation/create-ticket", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -201,7 +201,7 @@ function send_ticket(ticket, student){
       window.ModalUtils.showSuccessModal('Ticket Submitted Successfully.');
       setTimeout(() => {
         window.ModalUtils.hideAllModals();
-        window.location.href='{% url "ts:SearchStudent" %}';
+        window.location.href='{% url "ts_guard:SearchStudent" %}';
       }, 1500);
     }
   })

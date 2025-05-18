@@ -30,9 +30,25 @@ def paginate_queryset(request, queryset, per_page):
 def active_list():
     return AcademicYear.objects.filter(active=1)
 
+def require_admin(request):
+    users_role = request.session.get('users_role')
+    if users_role != 'Admin':
+        request.session.flush()
+        messages.error(request, "You must be an admin to access this page. Please log in as an admin.")
+        return False
+    return True
+
+def require_personnel(request):
+    users_role = request.session.get('users_role')
+    if users_role != 'User':
+        request.session.flush()
+        messages.error(request, "You must be a personnel user to access this page. Please log in as a personnel user.")
+        return False
+    return True
+
 @never_cache
 def dashboard_view(request):
-    if not request.session.get('ssio_user_id'):
+    if not require_admin(request):
         return redirect('ts_users:login') 
     
     ay_id = active_list()
@@ -69,7 +85,7 @@ def dashboard_view(request):
 
 @never_cache
 def add_ticket(request):
-    if not request.session.get('ssio_user_id'):
+    if not require_admin(request):
         return redirect('ts_users:login') 
     
     if request.method == "POST":
@@ -158,12 +174,12 @@ def add_ticket(request):
     })
 
 def student_search(request):
-    if not request.session.get('ssio_user_id'):
+    if not require_admin(request):
         return redirect('ts_users:login') 
     return render(request, 'system/searchStudent.html') 
 
 def statistics_view(request):
-    if not request.session.get('ssio_user_id'):
+    if not require_admin(request):
         return redirect('ts_users:login') 
     return render(request, 'system/statistics.html') 
 
@@ -205,7 +221,7 @@ def violation_types_view(request):
 
 @never_cache
 def ticket_details_view(request, ticket_id):
-    if not request.session.get('ssio_user_id'):
+    if not require_admin(request):
         return redirect('ts_users:login') 
     
     ticket = Ticket.objects.get(ticket_id=ticket_id)
@@ -225,7 +241,7 @@ def ticket_details_view(request, ticket_id):
 
 @never_cache
 def update_id_status(request, ticket_id):
-    if not request.session.get('ssio_user_id'):
+    if not require_admin(request):
         return redirect('ts_users:login') 
     
     if request.method == 'POST':
@@ -249,7 +265,7 @@ def update_id_status(request, ticket_id):
         
 @never_cache
 def user_management_view(request):
-    if not request.session.get('ssio_user_id'):
+    if not require_admin(request):
         return redirect('ts_users:login') 
     
     roles = Role.objects.all()
@@ -272,7 +288,7 @@ def user_management_view(request):
 
 @never_cache
 def create_user(request):
-    if not request.session.get('ssio_user_id'):
+    if not require_admin(request):
         return redirect('ts_users:login') 
 
     if request.method == "POST":
@@ -311,7 +327,7 @@ def create_user(request):
 
 @never_cache
 def update_profile(request, ssio_id):
-    if not request.session.get('ssio_user_id'):
+    if not require_admin(request):
         return redirect('ts_users:login') 
     
     if request.method == "POST":
@@ -376,7 +392,7 @@ def update_profile(request, ssio_id):
 
 @never_cache
 def update_user(request, ssio_id):
-    if not request.session.get('ssio_user_id'):
+    if not require_admin(request):
         return redirect('ts_users:login') 
 
     if request.method == "PATCH":
@@ -404,8 +420,8 @@ def update_user(request, ssio_id):
 
 @never_cache
 def delete_user(request, ssio_id):
-    if not request.session.get('ssio_user_id'):
-        return redirect('ts_users:login') 
+    if not require_admin(request):
+        return redirect('ts_users:login')  
     
     if request.method == 'DELETE':
         try:
@@ -431,7 +447,7 @@ def delete_user(request, ssio_id):
 
 @never_cache
 def logout_view(request):
-    if not request.session.get('ssio_user_id'):
+    if not require_admin(request):
         return redirect('ts_users:login') 
     
     request.session.flush()

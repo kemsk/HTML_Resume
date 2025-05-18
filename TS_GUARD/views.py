@@ -13,7 +13,6 @@ import os, base64, io, hashlib, json, logging, traceback
 
 logger = logging.getLogger(__name__)
 
-
 def hash_password(value):
     salt = os.urandom(16)
     value_salt_combined = value.encode('utf-8') + salt
@@ -30,8 +29,6 @@ def paginate_queryset(request, queryset, per_page):
 
 def active_list():
     return AcademicYear.objects.filter(active=1)
-
-
 
 
 def require_admin(request):

@@ -13,6 +13,7 @@ import base64
 
 # Local app imports
 from TS_Users.models import User
+from SSIO_API.jwt_utils import generate_jwt_token
 
 import logging
 logger = logging.getLogger(__name__)
@@ -97,6 +98,10 @@ def login_view(request):
                 user = User.objects.get(ssio_id=stored_ssio_id)
                 
                 if verify_password(user.ssio_userpin, entered_pin):
+                    # Generate JWT token for API authentication
+                    jwt_token = generate_jwt_token(user.ssio_id)
+                    request.session['jwt_token'] = jwt_token
+
                     # Save permanent session data here
                     request.session['ssio_user_id'] = user.ssio_id
                     request.session['ssio_username'] = user.ssio_username
@@ -110,7 +115,19 @@ def login_view(request):
                     request.session.pop('ssio_id', None)
                     request.session.modified = True 
 
-                    return redirect('ts:Dashboard')
+                    if not user.ssio_id:
+                        messages.error(request, "User not authorized to access this system")
+                        return redirect('ts_users:login')
+
+                    # Always fetch the latest role from DB and set session
+                    user_role = user.access_type.role if user.access_type else 'User'
+                    request.session['users_role'] = user_role
+                    request.session.modified = True
+
+                    if user_role == 'Admin':
+                        return redirect('ts:Dashboard')  # Admin
+                    else:
+                        return redirect('ts_guard:Dashboard')  # Personnel
                 else:
                     messages.error(request, "Invalid PIN.")
                     context['show_pin_modal'] = True
@@ -227,4 +244,19 @@ def google_callback(request):
     request.session['users_role'] = user.access_type.role if user.access_type else 'User'
     request.session.modified = True
 
-    return redirect('ts:Dashboard')
+    # Generate JWT token for API authentication
+    jwt_token = generate_jwt_token(user.ssio_id)
+    request.session['jwt_token'] = jwt_token
+
+    # Redirect based on role
+    if not user.ssio_id:
+        messages.error(request, "User not authorized to access this system")
+        return redirect('ts_users:login')
+    # Always fetch the latest role from DB and set session
+    user_role = user.access_type.role if user.access_type else 'User'
+    request.session['users_role'] = user_role
+    request.session.modified = True
+    if user_role == 'Admin':
+        return redirect('ts:Dashboard')  # Admin
+    else:
+        return redirect('ts_guard:Dashboard')  # Personnel

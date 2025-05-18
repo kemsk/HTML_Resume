@@ -11,7 +11,7 @@ function openEditProfileModal(ssio_id, fname, lname, email, password, userpin) {
   // Set the form's action URL dynamically
   const editForm = document.getElementById('manage-profile-edit-form');
   if (editForm) {
-    editForm.action = `/xu-entry-violation/profile/update/${ssio_id}`;
+    editForm.action = `/admin/xu-entry-violation/profile/update/${ssio_id}`;
     console.log("Form action set to:", editForm.action);
   }
 }
@@ -47,7 +47,7 @@ function showEditProfile(userId, firstName, lastName, email) {
   // Set form action dynamically
   const editForm = document.getElementById('static-edit-profile-form');
   if (editForm) {
-    editForm.action = `/xu-entry-violation/profile/update/${userId}`;
+    editForm.action = `/admin/xu-entry-violation/profile/update/${userId}`;
     console.log("Static form action set to:", editForm.action);
   }
 }
@@ -65,7 +65,7 @@ function updateProfile() {
   // Otherwise use fetch API
   const formData = new FormData(form);
   
-  fetch(`/xu-entry-violation/profile/update/${userId}`, {
+  fetch(`/admin/xu-entry-violation/profile/update/${userId}`, {
     method: 'POST',
     body: formData,
     headers: {
@@ -198,7 +198,7 @@ function user_create() {
 
   const data = { fname, lname, email, username, password, role, pin };
 
-  fetch(`/xu-entry-violation/user/create`, {
+  fetch(`/admin/xu-entry-violation/user/create`, {
     method: "POST",
     headers: {
       'Content-Type': 'application/json',
@@ -239,7 +239,7 @@ function user_edit() {
 
   const data = { user_id: userId, fname, lname, email, role };
 
-  fetch(`/xu-entry-violation/user/update/${userId}`, {
+  fetch(`/admin/xu-entry-violation/user/update/${userId}`, {
     method: "PATCH",
     headers: {
       'Content-Type': 'application/json',
@@ -271,7 +271,7 @@ function user_edit() {
 function user_delete() {
   const userId = document.getElementById('delete-user-id-input').value;
 
-  fetch(`/xu-entry-violation/user/delete/${userId}`, {
+  fetch(`/admin/xu-entry-violation/user/delete/${userId}`, {
     method: "DELETE",
     headers: {
       'Content-Type': 'application/json',
@@ -436,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const data = { fname, lname, email, username, password, role, pin };
 
-    fetch(`/xu-entry-violation/user/create`, {
+    fetch(`/admin/xu-entry-violation/user/create`, {
       method: "POST",
       headers: {
         'Content-Type': 'application/json',
@@ -478,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const data = { user_id: userId, fname, lname, email, role };
 
-    fetch(`/xu-entry-violation/user/update/${userId}`, {
+    fetch(`/admin/xu-entry-violation/user/update/${userId}`, {
       method: "PATCH",
       headers: {
         'Content-Type': 'application/json',
@@ -511,7 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.user_delete = function() {
     const userId = document.getElementById('delete-user-id-input').value;
 
-    fetch(`/xu-entry-violation/user/delete/${userId}`, {
+    fetch(`/admin/xu-entry-violation/user/delete/${userId}`, {
       method: "DELETE",
       headers: {
         'Content-Type': 'application/json',

@@ -2,7 +2,7 @@ const token = sessionStorage.getItem('jwt_token') || '{{ request.session.jwt_tok
 document.addEventListener('DOMContentLoaded', () => {
 
   function update_id(ticket_id, status) {
-    fetch(`/admin/xu-entry-violation/ticket/${ticket_id}/update/id-status`, {
+    fetch(`/user/xu-entry-violation/ticket/${ticket_id}/update/id-status`, {
         method: "POST",
         headers: {
             "Content-Type": 'application/json',

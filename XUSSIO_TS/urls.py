@@ -18,7 +18,8 @@ from django.urls import path, include
 from django.shortcuts import redirect
 
 urlpatterns = [
-    path('xu-entry-violation/', include('TS.urls')),
+    path('admin/xu-entry-violation/', include('TS.urls')),
+    path('user/xu-entry-violation/', include('TS_GUARD.urls')),
     path('ts/dev/api/', include('SSIO_API.urls')),
     path('', include('TS_Users.urls')),
     path('', lambda request: redirect('ts_users:login')),

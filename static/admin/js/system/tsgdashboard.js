@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function update_id(ticket_id, status) {
-    fetch(`/admin/xu-entry-violation/ticket/${ticket_id}/update/id-status`, {
+    fetch(`/user/xu-entry-violation/ticket/${ticket_id}/update/id-status`, {
         method: "POST",
         headers: {
             "Content-Type": 'application/json',
