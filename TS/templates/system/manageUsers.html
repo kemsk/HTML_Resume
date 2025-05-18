@@ -16,105 +16,168 @@
 
 {% block content %}
 <main id="manage-users-content">
-  <div class="section-header mb-4 d-flex justify-content-between align-items-center">
+  <div class="section-header mb-4 d-flex justify-content-between align-items-center"
+    style="background-color: transparent; box-shadow: none;">
     <div class="title-section d-flex align-items-center">
-      <i class="fas fa-users-cog icon"></i>
-      <b>MANAGE USERS</b>
+      <i class="fa-solid fa-gear" aria-hidden="true"></i>
+      SETTINGS
     </div>
-
-    <!-- Create New User Button -->
-    <button class="btn btn-primary" data-bs-toggle="modal" style="width:auto" data-bs-target="#createUserModal">
-      <i class="fas fa-plus"></i>
-      <b> Create New User</b>
-    </button>
   </div>
 
-  <div class="container-fluid">
-    <div class="row g-3">
-      <!-- Filters Section -->
-      <div class="col-m</div>d-7 offset-md-5">
-        <form action="{% url 'ts:UserManagement' %}" method="get" class="d-flex gap-2 align-items-center">
-          <button type="button" class="outline">Filters:</button>
-          <input id="ssio_name" name="ssio_name" type="text" class="outline" placeholder="Search by Name"
-            value="{{ request.GET.ssio_name|default:'' }}">
-          <input id="ssio_id" name="ssio_id" type="text" class="outline" placeholder="Search Employee ID"
-            value="{{ request.GET.ssio_id|default:'' }}">
-          <button type="submit" class="outline">Search</button>
-
-          {% if request.GET.ssio_name or request.GET.ssio_id %}
-          <a href="{% url 'ts:UserManagement' %}">
-            <button type="button" class="btn btn-outline-secondary">Clear</button>
-          </a>
-          {% endif %}
-        </form>
+  <div class="row" style="background-color: transparent;">
+    <!-- Left Container: Settings Navigation -->
+    <div class="col-md-3">
+      <div class="card shadow-sm">
+        <div class="card-header bg-light">
+          <h5 class="mb-0"><strong>Settings</strong></h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            <a href="#" id="manage-users-btn" onclick="showManageUsers(); return false;"
+              class="list-group-item list-group-item-action active">
+              <i class="fas fa-users-cog me-2"></i> Manage Users
+            </a>
+            <a href="#" id="edit-profile-btn" onclick="showEditProfile(
+                '{{ request.session.ssio_user_id }}', 
+                '{{ request.session.ssio_fname|escapejs }}', 
+                '{{ request.session.ssio_lname|escapejs }}', 
+                '{{ request.session.ssio_email|escapejs }}'
+              ); return false;" class="list-group-item list-group-item-action">
+              <i class="fas fa-user-edit me-2"></i> Edit Profile
+            </a>
+          </div>
+        </div>
       </div>
+    </div>
 
+    <!-- Right Container: User Management -->
+    <div class="col-md-9">
+      <!-- User Management Container -->
+      <div id="user-management-container" class="card shadow-sm mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><strong>User Management</strong></h5>
+          <!-- Create New User Button -->
+          <button class="btn btn-primary" data-bs-toggle="modal" style="width:auto" data-bs-target="#createUserModal">
+            <i class="fas fa-plus"></i>
+            <b> Create New User</b>
+          </button>
+        </div>
+        <div class="card-body">
+          <!-- Filters Section -->
+          <div class="mb-4">
+            <form action="{% url 'ts:UserManagement' %}" method="get" class="d-flex gap-2 align-items-center">
+              <button type="button" class="outline">Filters:</button>
+              <input id="ssio_name" name="ssio_name" type="text" class="outline" placeholder="Search by Name"
+                value="{{ request.GET.ssio_name|default:'' }}">
+              <input id="ssio_id" name="ssio_id" type="text" class="outline" placeholder="Search Employee ID"
+                value="{{ request.GET.ssio_id|default:'' }}">
+              <button type="submit" class="outline">Search</button>
 
-      <!-- Table Section -->
-      <div class="col-md-12">
-        <table id="users-table" class="table mt-3">
-          <thead>
-            <tr>
-              <th>User ID</th>
-              <th>Employee Name</th>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for user in users %}
-            <tr>
-              <td>{{ user.ssio_id }}</td>
-              <td>{{ user.ssio_lname }}, {{ user.ssio_fname }}</td>
-              <td>{{ user.ssio_username }}</td>
-              <td>{{ user.ssio_email }}</td>
-              <td>{{ user.access_type }}</td>
-              <td>
+              {% if request.GET.ssio_name or request.GET.ssio_id %}
+              <a href="{% url 'ts:UserManagement' %}">
+                <button type="button" class="btn btn-outline-secondary">Clear</button>
+              </a>
+              {% endif %}
+            </form>
+          </div>
+
+          <!-- Table Section -->
+          <table id="users-table" class="table mt-3">
+            <thead>
+              <tr>
+                <th>User ID</th>
+                <th>Employee Name</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in users %}
+              <tr>
+                <td>{{ user.ssio_id }}</td>
+                <td>{{ user.ssio_lname }}, {{ user.ssio_fname }}</td>
+                <td>{{ user.ssio_username }}</td>
+                <td>{{ user.ssio_email }}</td>
+                <td>{{ user.access_type }}</td>
+                <td>
                   <div class="d-flex gap-2">
-                  <!-- View Button -->
-                  <button 
-                    class="btn btn-primary btn-sm" 
-                    data-bs-toggle="modal" 
-                    data-bs-target="#viewUserModal" 
-                    onclick="openViewUserModal(this)"
-                    data-id="{{ user.ssio_id }}"
-                    data-fname="{{ user.ssio_fname }}"
-                    data-lname="{{ user.ssio_lname }}"
-                    data-username="{{ user.ssio_username }}"
-                    data-email="{{ user.ssio_email }}"
-                    data-access-type="{{ user.access_type }}">
-                    View
-                  </button>
+                    <!-- View Button -->
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#viewUserModal"
+                      onclick="openViewUserModal(this)" data-id="{{ user.ssio_id }}" data-fname="{{ user.ssio_fname }}"
+                      data-lname="{{ user.ssio_lname }}" data-username="{{ user.ssio_username }}"
+                      data-email="{{ user.ssio_email }}" data-access-type="{{ user.access_type }}">
+                      View
+                    </button>
 
-                  <!-- Edit Button -->
-                  <button class="btn btn-warning btn-sm" 
-                  data-bs-toggle="modal" 
-                  data-bs-target="#editUserModal" 
-                  onclick="openEditUserModal(this)"
-                  data-id="{{ user.ssio_id }}"
-                  data-fname="{{ user.ssio_fname }}"
-                  data-lname="{{ user.ssio_lname }}"
-                  data-email="{{ user.ssio_email }}"
-                  data-access-type="{{ user.access_type }}">
-                  Edit
-                </button>
-                </div>
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="5" class="text-center">No users found.</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+                    <!-- Edit Button -->
+                    <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editUserModal"
+                      onclick="openEditUserModal(this)" data-id="{{ user.ssio_id }}" data-fname="{{ user.ssio_fname }}"
+                      data-lname="{{ user.ssio_lname }}" data-email="{{ user.ssio_email }}"
+                      data-access-type="{{ user.access_type }}">
+                      Edit
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center">No users found.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Edit Profile Container (Initially Hidden) -->
+      <div id="edit-profile-container" class="card shadow-sm mb-4" style="display: none;">
+        <div class="card-header bg-light">
+          <h5 class="mb-0"><strong>Edit Profile</strong></h5>
+        </div>
+        <div class="card-body">
+          <form id="static-edit-profile-form" method="POST">{% csrf_token %}
+            <input type="hidden" name="ssio_id" id="static-profile-id">
+
+            <div class="mb-3 row">
+              <div class="col-md-6">
+                <label for="static-profile-fname" class="form-label">First Name</label>
+                <input type="text" name="fname" id="static-profile-fname" class="form-control">
+              </div>
+              <div class="col-md-6">
+                <label for="static-profile-lname" class="form-label">Last Name</label>
+                <input type="text" name="lname" id="static-profile-lname" class="form-control">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="static-profile-email" class="form-label">Email</label>
+              <input type="email" name="email" id="static-profile-email" class="form-control">
+            </div>
+
+            <div class="mb-3">
+              <label for="static-profile-password" class="form-label">New Password (leave blank to keep current)</label>
+              <input type="password" name="password" id="static-profile-password" class="form-control">
+            </div>
+
+            <div class="mb-3">
+              <label for="static-profile-pin" class="form-label">New PIN (leave blank to keep current)</label>
+              <input type="password" maxlength="6" pattern="\d{6}" inputmode="numeric" name="pin"
+                id="static-profile-pin" class="form-control">
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+              <button type="button" class="btn btn-outline-secondary" onclick="showManageUsers()">Cancel</button>
+              <button type="button" class="btn btn-primary" onclick="updateProfile()">Save Changes</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>
 
-<!-- CREATE USER MODAL -->
+  <!-- CREATE USER MODAL -->
   <div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
       <div class="createUserModal modal-content">
@@ -199,7 +262,7 @@
           <h5 class="modal-title" id="viewUserModalLabel">User Details</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body text-start">
+        <div class="modal-body text-center">
           <p><span>User ID:</span> <strong id="modal-user-id"></strong></p>
           <p><span>First Name:</span> <strong id="modal-user-fname"></strong></p>
           <p><span>Last Name:</span> <strong id="modal-user-lname"></strong></p>
@@ -207,15 +270,11 @@
           <p><span>Email:</span> <strong id="modal-user-email"></strong></p>
           <p><span>Access Type:</span> <strong id="modal-user-access-type"></strong></p>
 
-          <button 
-            class="btn btn-danger btn-sm" 
-            onclick="confirmDeleteUser({
+          <button class="btn btn-danger btn-sm" onclick="confirmDeleteUser({
               id: document.getElementById('modal-user-id').textContent.trim(),
               username: document.getElementById('modal-user-username').textContent.trim(),
               email: document.getElementById('modal-user-email').textContent.trim()
-            })" 
-            data-bs-toggle="modal" 
-            data-bs-target="#deleteUserModal">
+            })" data-bs-toggle="modal" data-bs-target="#deleteUserModal">
             Delete
           </button>
         </div>
@@ -229,7 +288,8 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="editUserModalLabel">Edit User Details</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+            onclick="location.reload()"></button>
         </div>
         <div class="modal-body">
           <form id="manage-users-edit-form">
@@ -261,10 +321,12 @@
                 </select>
               </div>
             </div>
-            
+
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="location.reload()">Cancel</button>
-              <button type="button" class="btn btn-primary" onclick="user_edit()">Save Changes</button>
+              <button type="button" style="width: auto" class="btn btn-outline-secondary" data-bs-dismiss="modal"
+                onclick="location.reload()">Cancel</button>
+              <button type="button" style="width: auto" class="btn btn-primary" onclick="user_edit()">Save
+                Changes</button>
             </div>
           </form>
         </div>
@@ -292,7 +354,8 @@
           <p class="text-danger"><strong>This action cannot be undone.</strong></p>
         </div>
         <div class="modal-footer d-flex justify-content-between">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="location.reload()">Cancel</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+            onclick="location.reload()">Cancel</button>
           <form>
             <input type="hidden" name="ssio_id" id="delete-user-id-input">
             <button type="button" class="btn btn-danger" onclick="user_delete()">Delete User</button>
@@ -302,222 +365,40 @@
     </div>
   </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const table = document.getElementById('users-table');
-      const headers = table.querySelectorAll('th');
-      let sortDirection = 1; // 1 = asc, -1 = desc
-      let currentSortedColumn = -1;
-  
-      headers.forEach((header, index) => {
-          header.style.cursor = 'pointer';
-          header.addEventListener('click', () => {
-              if (currentSortedColumn === index) {
-                  sortDirection *= -1; // Toggle direction
-              } else {
-                  sortDirection = 1; // Default to ascending
-                  currentSortedColumn = index;
-              }
-  
-              const tbody = table.querySelector('tbody');
-              const rows = Array.from(tbody.querySelectorAll('tr'))
-                  .filter(row => row.querySelectorAll('td').length > 0); // Ignore empty or no-data rows
-  
-              rows.sort((a, b) => {
-                  const cellA = a.querySelectorAll('td')[index].innerText.trim().toLowerCase();
-                  const cellB = b.querySelectorAll('td')[index].innerText.trim().toLowerCase();
-  
-                  // Try to compare as numbers first
-                  const numA = parseFloat(cellA);
-                  const numB = parseFloat(cellB);
-  
-                  if (!isNaN(numA) && !isNaN(numB)) {
-                      return (numA - numB) * sortDirection;
-                  }
-  
-                  return cellA.localeCompare(cellB) * sortDirection;
-              });
-  
-              // Clear existing rows
-              rows.forEach(row => tbody.appendChild(row));
-          });
-      });
-  });
+  <!-- Success Modal -->
+  <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="successModalLabel">Success</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center" id="successModalBody">
+          <!-- Message will be inserted here -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  function openViewUserModal(button){
-    const dataset = button.dataset;
+  <!-- Error Modal -->
+  <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="errorModalLabel">Error</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center" id="errorModalBody">
+          <!-- Message goes here -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    document.getElementById('modal-user-id').textContent = dataset.id || '';
-    document.getElementById('modal-user-fname').textContent = dataset.fname || '';
-    document.getElementById('modal-user-lname').textContent = dataset.lname || '';
-    document.getElementById('modal-user-username').textContent = dataset.username || '';
-    document.getElementById('modal-user-email').textContent = dataset.email || '';
-    document.getElementById('modal-user-access-type').textContent = dataset.accessType || '';
-  }
-
-  function confirmDeleteUser(userData){
-    document.getElementById('delete-user-id').textContent = userData.id;
-    document.getElementById('delete-username').textContent = userData.username;
-    document.getElementById('delete-user-email').textContent = userData.email;
-    document.getElementById('delete-user-id-input').value = userData.id;
-
-    var deleteModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
-    deleteModal.show();
-  }
-
-  function openEditUserModal(button) {
-    const dataset = button.dataset;
-
-    document.getElementById('modal-edit-user-id').value = dataset.id || '';
-    document.getElementById('modal-edit-user-fname').value = dataset.fname || '';
-    document.getElementById('modal-edit-user-lname').value = dataset.lname || '';
-    document.getElementById('modal-edit-user-email').value = dataset.email || '';
-    document.getElementById('modal-edit-user-accesstype').value = dataset.accessType || '';
-
-    const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
-    editModal.show();
-  }
-
-  function user_create() {
-    const fname = document.getElementById('ssio_fname').value;
-    const lname = document.getElementById('ssio_lname').value;
-    const email = document.getElementById('ssio_email').value;
-    const username = document.getElementById('ssio_username').value;
-    const password = document.getElementById('password').value;
-    const confPassword = document.getElementById('confirm-password').value;
-    const role = document.querySelector('#access_type').value;
-    const pin = document.getElementById('ssio_userpin').value;
-
-    if (password !== confPassword) {
-      alert('Password Mismatch.');
-      return;
-    }
-
-    if (fname == "" || lname == "" || email == "" || username == "" || password == "" || role == "" || pin == ""){
-      alert('Fill all fields required.');
-      return
-    }
-
-    const data = {
-      fname: fname,
-      lname: lname,
-      email: email,
-      username: username,
-      password: password,
-      role: role,
-      pin: pin
-    };
-
-    fetch(`/admin/xu-entry-violation/user/create`, {
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCSRFToken()
-      },
-      body: JSON.stringify(data)
-    })
-    .then(response => {
-      if (!response.ok) {
-        return response.json().then(err => {
-          throw new Error(err.message || 'Failed to create user.');
-        });
-      }
-      return response.json();
-    })
-    .then(result => {
-      alert(result.message || 'User created successfully!');
-      location.reload();
-    })
-    .catch(error => {
-      alert(`Error: ${error.message}`);
-      console.error('User creation error:', error);
-    });
-  }
-
-  function user_edit() {
-    const userId = document.getElementById('modal-edit-user-id').value;
-    const fname = document.getElementById('modal-edit-user-fname').value;
-    const lname = document.getElementById('modal-edit-user-lname').value;
-    const email = document.getElementById('modal-edit-user-email').value;
-    const role = document.querySelector('#modal-edit-user-accesstype').value;
-
-    if (fname === "" || lname === "" || email === "" || role === "") {
-      alert('Fill all fields required.');
-      return;
-    }
-
-    const data = {
-      user_id: userId,
-      fname: fname,
-      lname: lname,
-      email: email,
-      role: role
-    };
-
-    fetch(`/admin/xu-entry-violation/user/update/${userId}`, {
-      method: "PATCH",
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCSRFToken()  
-      },
-      body: JSON.stringify(data)
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Failed to update user');
-      }
-      return response.json();
-    })
-    .then(data => {
-      if (data.success) {
-        alert('User updated successfully!');
-        window.location.reload();
-      } else {
-        alert(data.message || 'Something went wrong while updating.');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('Failed to update user. Please try again.');
-    });
-  }
-
-  function user_delete() {
-    const userId = document.getElementById('delete-user-id-input').value;
-
-    fetch(`/admin/xu-entry-violation/user/delete/${userId}`, {
-      method: "DELETE",
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCSRFToken()
-      },
-      body: JSON.stringify({ 
-        user_id: userId 
-      })
-    })
-    .then(response => {
-      if (!response.ok) {
-        return response.json().then(data => {
-          throw new Error(data.message || 'Failed to delete user.');
-        });
-      }
-      return response.json();
-    })
-    .then(data => {
-      alert("User deleted successfully.");
-      location.reload();
-    })
-    .catch(error => {
-      alert("Error: " + error.message);
-    });
-  }
-
-  function getCSRFToken() {
-  return document.cookie
-    .split(";")
-    .find(c => c.trim().startsWith("csrftoken="))
-    ?.split("=")[1] || "";
-  }
-</script>
-
-{% endblock %}
+  {% endblock %}

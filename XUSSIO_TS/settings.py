@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'TS',
     'TS_Users',
-    'TS_GUARD',
     'SSIO_API',
     'corsheaders'
 ]
@@ -108,6 +107,11 @@ DATABASES = {
 }
 
 
+
+
+
+
+
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -147,7 +151,7 @@ USE_TZ = False
 #     BASE_DIR / 'TS' / 'static'/ 'css',
 # 
 #
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
@@ -176,8 +180,3 @@ AUTHENTICATION_BACKENDS = (
     'social_core.backends.google.GoogleOAuth2',
     'django.contrib.auth.backends.ModelBackend',
 )
-
-# JWT Settings
-JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
-JWT_ALGORITHM = os.environ.get("JWT_ALGORITHM")
-JWT_EXPIRATION_DELTA = os.environ.get("JWT_EXPIRATION_DELTA")

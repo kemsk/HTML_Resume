@@ -27,30 +27,12 @@ def paginate_queryset(request, queryset, per_page):
     paginator = Paginator(queryset, per_page)
     return paginator.get_page(page_number)
 
-
 def active_list():
     return AcademicYear.objects.filter(active=1)
 
-def require_admin(request):
-    users_role = request.session.get('users_role')
-    if users_role != 'Admin':
-        request.session.flush()
-        messages.error(request, "You must be an admin to access this page. Please log in as an admin.")
-        return False
-    return True
-
-def require_personnel(request):
-    users_role = request.session.get('users_role')
-    if users_role != 'User':
-        request.session.flush()
-        messages.error(request, "You must be a personnel user to access this page. Please log in as a personnel user.")
-        return False
-    return True
-
-
 @never_cache
 def dashboard_view(request):
-    if not require_admin(request):
+    if not request.session.get('ssio_user_id'):
         return redirect('ts_users:login') 
     
     ay_id = active_list()
@@ -85,10 +67,9 @@ def dashboard_view(request):
 
     return render(request, 'system/dashboard.html', {'tickets': page_obj})
 
-
 @never_cache
 def add_ticket(request):
-    if not require_admin(request):
+    if not request.session.get('ssio_user_id'):
         return redirect('ts_users:login') 
     
     if request.method == "POST":
@@ -177,12 +158,12 @@ def add_ticket(request):
     })
 
 def student_search(request):
-    if not require_admin(request):
+    if not request.session.get('ssio_user_id'):
         return redirect('ts_users:login') 
     return render(request, 'system/searchStudent.html') 
 
 def statistics_view(request):
-    if not require_admin(request):
+    if not request.session.get('ssio_user_id'):
         return redirect('ts_users:login') 
     return render(request, 'system/statistics.html') 
 
@@ -224,7 +205,7 @@ def violation_types_view(request):
 
 @never_cache
 def ticket_details_view(request, ticket_id):
-    if not require_admin(request):
+    if not request.session.get('ssio_user_id'):
         return redirect('ts_users:login') 
     
     ticket = Ticket.objects.get(ticket_id=ticket_id)
@@ -244,7 +225,7 @@ def ticket_details_view(request, ticket_id):
 
 @never_cache
 def update_id_status(request, ticket_id):
-    if not require_admin(request):
+    if not request.session.get('ssio_user_id'):
         return redirect('ts_users:login') 
     
     if request.method == 'POST':
@@ -266,10 +247,9 @@ def update_id_status(request, ticket_id):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
         
-
 @never_cache
 def user_management_view(request):
-    if not require_admin(request):
+    if not request.session.get('ssio_user_id'):
         return redirect('ts_users:login') 
     
     roles = Role.objects.all()
@@ -292,7 +272,7 @@ def user_management_view(request):
 
 @never_cache
 def create_user(request):
-    if not require_admin(request):
+    if not request.session.get('ssio_user_id'):
         return redirect('ts_users:login') 
 
     if request.method == "POST":
@@ -331,7 +311,7 @@ def create_user(request):
 
 @never_cache
 def update_profile(request, ssio_id):
-    if not require_admin(request):
+    if not request.session.get('ssio_user_id'):
         return redirect('ts_users:login') 
     
     if request.method == "POST":
@@ -396,7 +376,7 @@ def update_profile(request, ssio_id):
 
 @never_cache
 def update_user(request, ssio_id):
-    if not require_admin(request):
+    if not request.session.get('ssio_user_id'):
         return redirect('ts_users:login') 
 
     if request.method == "PATCH":
@@ -424,7 +404,7 @@ def update_user(request, ssio_id):
 
 @never_cache
 def delete_user(request, ssio_id):
-    if not require_admin(request):
+    if not request.session.get('ssio_user_id'):
         return redirect('ts_users:login') 
     
     if request.method == 'DELETE':
@@ -451,7 +431,7 @@ def delete_user(request, ssio_id):
 
 @never_cache
 def logout_view(request):
-    if not require_admin(request):
+    if not request.session.get('ssio_user_id'):
         return redirect('ts_users:login') 
     
     request.session.flush()
@@ -461,7 +441,6 @@ def logout_view(request):
     response['Pragma'] = 'no-cache'
     response['Expires'] = '0'
     return response
-
 
 
 def search_by_drive_file_id(request):

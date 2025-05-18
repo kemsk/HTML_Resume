@@ -3,8 +3,6 @@ from TS_Users.models import *
 from django.http import JsonResponse
 import json
 from django.views.decorators.csrf import csrf_exempt
-import jwt
-from django.conf import settings
 
 # Create your views here.
 @csrf_exempt
@@ -48,29 +46,9 @@ def get_ticket(request, ticket_id):
     except Ticket.DoesNotExist:
         return JsonResponse({'error': 'Ticket not found'}, status=404)
 
-def checktoken(token):
-    auth_header = token
-    if not auth_header.startswith('Bearer '):
-        return False
-    
-    token = auth_header.split(' ')[1]
-    try:
-        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
-        
-        if payload.get('role') != 'OSA':
-            return False
-    except jwt.ExpiredSignatureError:
-        return False
-    except jwt.InvalidTokenError:
-        return False
-    return True
-
 @csrf_exempt
 def active_year(request):
     if request.method == "PATCH":
-        token = request.headers.get('Authorization', '')
-        if not checktoken(token):
-            return JsonResponse({'success': False, 'error': 'Unauthorized: Role OSA required'}, status=403)
         try:
             data = json.loads(request.body)
             acad_year_id = data.get('acad_year_id')
@@ -95,9 +73,6 @@ def active_year(request):
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
          
     if request.method == "POST":
-        token = request.headers.get('Authorization', '')
-        if not checktoken(token):
-            return JsonResponse({'success': False, 'error': 'Unauthorized: Role OSA required'}, status=403)
         try:
             data = json.loads(request.body)
             
@@ -128,9 +103,6 @@ def active_year(request):
             return JsonResponse({'error': str(e)}, status=400)
 
     if request.method == "DELETE":
-        token = request.headers.get('Authorization', '')
-        if not checktoken(token):
-            return JsonResponse({'success': False, 'error': 'Unauthorized: Role OSA required'}, status=403)
         try:
             data = json.loads(request.body)
             acad_year_id = data.get('acad_year_id')
@@ -149,9 +121,6 @@ def active_year(request):
 @csrf_exempt
 def acad_year_checker(request, acad_year_id):
     if request.method == "GET":
-        token = request.headers.get('Authorization', '')
-        if not checktoken(token):
-            return JsonResponse({'success': False, 'error': 'Unauthorized: Role OSA required'}, status=403)
         try:
             # You already have acad_year_id from the URL — no need for request.body
             acad_year = AcademicYear.objects.filter(acad_year_id=acad_year_id).exists()
@@ -166,9 +135,6 @@ def acad_year_checker(request, acad_year_id):
 @csrf_exempt
 def update_status(request, ticket_id):
     if request.method == "PATCH":
-        token = request.headers.get('Authorization', '')
-        if not checktoken(token):
-            return JsonResponse({'success': False, 'error': 'Unauthorized: Role OSA required'}, status=403)
         try:
             data = json.loads(request.body)
             id_status = data.get('id_status')

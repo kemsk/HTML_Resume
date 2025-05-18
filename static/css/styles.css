@@ -8,20 +8,49 @@
 body {
   font-family: 'Overpass', sans-serif;
   margin: 0;
-  padding: 10px; /* Added 'px' to fix syntax issue */
+  padding: 0;
+  /* Removed padding to allow header to span edge-to-edge */
+  background-color: #F2F4F7 !important;
+  /* Set website background color */
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  /* Full height for the body */
+  overflow-x: hidden;
+}
+
+/* Ticket Details Page Styles */
+#ticket-details-content {
+  color: #333;
 }
 
 .container {
-  max-width: 1100px;
+  padding: 15px 20px;
   margin: auto;
   background: #fff;
   border-radius: 10px;
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
 }
 
 .header {
   font-weight: 600;
-  box-shadow: 0 4px 4px -2px rgba(0, 0, 0, 0.3);
+  background: #ffff !important;
+  color: #333 !important;
+  box-shadow: 0 4px 4px -2px rgba(0, 0, 0, 0.3) !important;
+  width: 100% !important;
+  /* Span horizontally */
+  margin: 0 !important;
+  padding: 5px 15px !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  z-index: 1000 !important;
+  height: 70px !important;
+  right: 0 !important;
+  transition: all 0.3s;
+  /* Add transition for smooth adjustment */
+  overflow: visible;
 }
 
 .header-title {
@@ -31,20 +60,33 @@ body {
 }
 
 .title-small {
-  font-size: 15px;
-  color: #19387E;
+  font-size: 0.5rem;
+  font-weight: 500;
+  color: white;
 }
 
 .title-large {
-  font-size: 20px;
-  color: #19387E; /* Xavier University Dark Blue */
-  font-weight: bold;
+  font-size: 1rem;
+  color: white;
 }
 
-.user-details {
-  text-align: left;
-  font-size: 16px;
-  color: #19387E;
+.user-info .dropdown-menu {
+  top: 100%;
+  /* dropdown appears right below */
+  right: 0;
+  margin-top: 0.25rem;
+  /* a little spacing */
+  max-width: 250px;
+  /* optional max width */
+  box-sizing: border-box;
+  padding: auto
+}
+
+
+/* Make all text in header white, including muted text */
+
+.header .btn {
+  color: white !important;
 }
 
 .user-details div:first-child {
@@ -56,16 +98,11 @@ body {
   gap: 5px;
 }
 
-.vertical-line {
-  width: 1px; /* Width of the line */
-  height: 30px; /* Height of the line, matches icon size */
-  background-color: #ccc; /* Color of the line */
-}
-
 .horizontal-line {
   margin: 20px;
   height: 1px;
-  background-color: #ccc; /* Color of the line */
+  background-color: #ccc;
+  /* Color of the line */
 }
 
 .icon-settings,
@@ -78,7 +115,7 @@ body {
 
 /* Navigation Buttons */
 .nav.buttons {
-  margin-top: 30px;
+  margin-top: 20px;
   gap: 20px;
   align-items: center;
   font-size: 16px;
@@ -86,66 +123,126 @@ body {
   width: 100%;
 }
 
-.button-container {
-  margin: auto;
-  padding: 20px;
-  horizontal-align: center;
-}
-
 .btn {
   font-size: 16px;
   width: 100%;
   max-width: 240px;
   transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-  
+
 }
 
 /* Unified button color for View, Add, and Manage */
-.btn.view, .btn.add, .btn.manage {
-  background-color: #D2DAE3; /* Light Blue background */
-  color: #162B5E; /* Xavier University Dark Blue text */
+.btn.view,
+.btn.add,
+.btn.manage {
+  background-color: #D2DAE3;
+  /* Light Blue background */
+  color: #162B5E;
+  /* Xavier University Dark Blue text */
   weight: bold;
 }
 
 /* Hover Effects */
 .btn:hover {
-  transform: translateY(-5px);  /* Adds lift effect */
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Adds shadow */
+  transform: translateY(-5px);
+  /* Adds lift effect */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  /* Adds shadow */
 }
 
 /* Active State for clicked button */
 .buttons .btn.active {
-  background-color: #19387E; /* Xavier University Light Blue for active state */
+  background-color: #19387E;
+  /* Xavier University Light Blue for active state */
   color: white;
 }
 
-.btn.view:hover, .btn.add:hover, .btn.manage:hover {
-  background-color: #c0d5f3;  /* Slightly darker blue when hovered */
+.btn.view:hover,
+.btn.add:hover,
+.btn.manage:hover {
+  background-color: #c0d5f3;
+  /* Slightly darker blue when hovered */
 }
 
 .icon {
-  display: inline-flex; /* Ensure icons are treated as block elements */
-  justify-content: center; /* Horizontally center the icon */
-  width: 20px; /* Width of the icon */
-  height: 20px; /* Height of the icon */
-  color: inherit; /* Inherit the button's text color */
-  margin: 10px; /* Margin around the icon */
+  display: inline-flex;
+  /* Ensure icons are treated as block elements */
+  justify-content: center;
+  /* Horizontally center the icon */
+  width: 20px;
+  /* Width of the icon */
+  height: 20px;
+  /* Height of the icon */
+  color: inherit;
+  /* Inherit the button's text color */
+  margin: 10px;
+  /* Margin around the icon */
 }
 
 /* For Font Awesome Icons */
-.fas {
+.fas,
+.fa-solid {
   font-size: 18px;
   color: inherit;
-  width: fit-content
+  width: 20px;
+  display: inline-block;
+  text-align: center;
 }
 
 /* Date and Time Section positioned beside the buttons */
 .date-info-container {
   display: flex;
   justify-content: space-between;
-  width: 100%; /* Ensure it takes up full width of its container */
+  width: 100%;
+  /* Ensure it takes up full width of its container */
   align-items: center;
   padding: 10px 30px 30px;
+}
+
+.date-time-container {
+  padding: 15px 20px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.date-time-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.date-time-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.today {
+  background-color: #ffe066;
+  /* Soft yellow */
+  color: #333;
+  font-weight: bold;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-block;
+  width: fit-content;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#current-date,
+#current-time {
+  font-size: 2rem;
+  font-family: 'Overpass', sans-serif;
+  font-weight: bold;
+
+
 }
 
 .status-pending::before {
@@ -180,22 +277,26 @@ body {
 
 .today {
   font-size: 18px;
-  font-weight: bold;
+  font-family: 'Overpass', sans-serif;
 }
 
 .date-info {
   text-align: right;
   font-size: 25px;
-  color: #1a3c73; /* Accent Blue */
+  color: #1a3c73;
+  /* Accent Blue */
   font-weight: bold;
-  margin-left: auto; /* Pushes date/time to the right */
-  padding-left: 20px; /* Adds some spacing from the buttons */
+  margin-left: auto;
+  /* Pushes date/time to the right */
+  padding-left: 20px;
+  /* Adds some spacing from the buttons */
   flex-grow: 1;
 }
 
 .current-date {
   font-size: 24px;
   font-weight: bold;
+
 }
 
 /* Time Section */
@@ -214,65 +315,90 @@ body {
 
 
 .section-header {
-  align-items: center; /* Vertically center all elements */
-  max-width: 1100px; /* Match the container width */
-  margin: auto; /* Center the container horizontally */
-  padding-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
+  background-color: #ffff;
 }
 
-.h2, .title-section {
+.h2,
+.title-section {
   max-width: 1100px;
-  color: #19387E; /* Xavier University Dark Blue */
+  color: #333;
+  /* Xavier University Dark Blue */
   font-weight: bold;
   font-size: 25px;
-  display: flex; /* Keeps the flexbox layout */
-  justify-content: flex-start; /* Aligns content to the left */
-  align-items: center; /* Vertically centers the text (optional) */
+  display: flex;
+  /* Keeps the flexbox layout */
+  justify-content: flex-start;
+  /* Aligns content to the left */
+  align-items: center;
+  /* Vertically centers the text (optional) */
   border-collapse: collapse;
   overflow: hidden;
 }
 
 .h3 {
   max-width: 1100px;
-  color: #19387E; /* Xavier University Dark Blue */
+  color: #333;
+  /* Xavier University Dark Blue */
   align-self: center;
 }
 
 /* Controls Container */
 .controls {
   display: flex;
-  gap: 10px; /* Spacing between controls */
-  align-items: center; /* Vertically center the controls */
+  gap: 10px;
+  /* Spacing between controls */
+  justify-content: flex-end;
+  align-items: center;
+  /* Vertically center the controls */
+}
+
+.search-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.search-form .outline {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+@media (max-width: 768px) {
+  .search-form {
+    flex-direction: column;
+    align-items: flex-end;
+    width: 100%;
+  }
+
+  .search-form .outline {
+    width: 100%;
+    max-width: 300px;
+  }
 }
 
 /* Filter Button */
 .outline {
-  padding:  8px 10px;
-  color: #1a2f6b; /* Xavier University Dark Blue text */
+  padding: 4px 8px;
+  /* Smaller padding */
+  font-size: 13px;
+  /* Slightly smaller font */
+  color: #333;
   border: 1px solid #DCDCDD;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 16px;
-}  
-
-
-/* View More Button */
-.view-more {
-  display: block;
-  margin: 20px auto; /* Center the button */
-  padding: 10px 20px;
-  background-color: #dbe1ee;
-  color: #1a2f6b;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+  border-radius: 8px;
+  height: 32px;
+  /* Fixed smaller height */
+  line-height: 1;
 }
 
-.view-more:hover {
-  background-color: #c0d5f3;
-}
 
 /* Table Styles */
 .table {
@@ -288,7 +414,8 @@ body {
 th {
   font-size: 16px;
   font-weight: bold;
-  color: #19387E; /* White text for the header */
+  color: #333;
+  /* White text for the header */
   font-size: 16px;
 }
 
@@ -313,15 +440,25 @@ td {
   margin-right: 8px;
 }
 
-.Pending { background-color: red; }
-.Resolved { background-color: orange; }
-.Claimed { background-color: green; }
-.Cleared { background-color: blue; }
+.Pending {
+  background-color: red;
+}
+
+.Resolved {
+  background-color: orange;
+}
+
+.Claimed {
+  background-color: green;
+}
+
+.Cleared {
+  background-color: blue;
+}
 
 
 .container-fluid {
   padding: 20px;
-  max-width: 1100px;
   margin: auto;
   background: #fff;
   border-radius: 10px;
@@ -335,15 +472,19 @@ td {
 
 
 form {
-  flex: 1; /* Ensures the form takes up equal space in a flex container */
+  flex: 1;
+  /* Ensures the form takes up equal space in a flex container */
 }
 
 .violations-details,
 .student-details {
-  flex: 1; /* Ensures both columns take up equal width */
+  flex: 1;
+  /* Ensures both columns take up equal width */
   display: flex;
-  flex-direction: column; /* Aligns content vertically within each column */
-  gap: 10px; /* Adds spacing between elements */
+  flex-direction: column;
+  /* Aligns content vertically within each column */
+  gap: 10px;
+  /* Adds spacing between elements */
 }
 
 
@@ -366,7 +507,6 @@ form {
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
-  max-width: 1100px;
   margin: auto;
 }
 
@@ -391,109 +531,257 @@ form {
 }
 
 
-@media (max-width: 768px) {
-
-  .header, .filters, .buttons {
-      flex-direction: column;
-      align-items: stretch;
-  }
-
-  .user-info, .date-info {
-      text-align: right;
-  }
-
-  .btn.view, .btn.add, .btn.manage {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-  }
-
-  th, td {
-      font-size: 12px;
-  }
-
-  .controls {
-      flex-direction: column; /* Stack controls vertically */
-      align-items: flex-start; /* Align controls to the left */
-      gap: 10px; /* Add spacing between stacked controls */
-  }
-
-  .search-container {
-      width: 100%; /* Make search input full width */
-  }
-
-  .row {
-      flex-direction: column;
-    }
+/* Main Container Layout */
+.main-container {
+  display: flex;
+  flex-grow: 1;
+  position: relative;
+  margin-top: 70px;
+  /* Space for header */
+  padding: 0;
+  margin-left: 0;
+  min-height: calc(100vh - 70px);
 }
+
+/* Sidebar Styles */
+
+.sidebar-divider {
+  border: none;
+  border-top: 1px solid #dee2e6;
+  /* Light grey line */
+  margin: 1rem 0;
+}
+
+/* Hide icon when sidebar is NOT collapsed */
+.sidebar:not(.collapsed) .sidebar-icon-only {
+  display: none;
+}
+
+/* Hide text when sidebar IS collapsed */
+.sidebar.collapsed .sidebar-text {
+  display: none;
+}
+
+
+.sidebar {
+  width: 150px;
+  height: 100vh;
+  /* Full viewport height */
+  position: fixed;
+  top: 0;
+  /* Start at the top */
+  left: 0;
+  background-color: #19387E;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s;
+  overflow: hidden;
+  padding-top: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar:hover {
+  width: 250px;
+}
+
+.sidebar.collapsed {
+  width: 80px;
+  text-align: center;
+}
+
+.sidebar-link {
+  display: block;
+  width: 100%;
+  padding: 10px 15px;
+  margin-bottom: 5px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  color: white;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.sidebar.collapsed .sidebar-link {
+  text-align: center;
+  padding: 10px 5px;
+}
+
+.sidebar-link:hover {
+  background-color: #e9ecef;
+  color: #162B5E;
+}
+
+.sidebar-link.active {
+  background-color: #e9ecef;
+  color: #162B5E;
+  font-weight: bold;
+}
+
+.sidebar-link i {
+  width: 30px;
+  text-align: center;
+  margin-right: 10px;
+  font-size: 1.1rem;
+  display: inline-block;
+  /* Ensure icons are always visible */
+}
+
+.btn-text {
+  display: inline-block;
+  transition: opacity 0.3s;
+  margin-left: 10px;
+}
+
+.sidebar.collapsed .btn-text {
+  opacity: 0;
+  position: absolute;
+  left: -9999px;
+  width: 0;
+}
+
+.sidebar:hover .btn-text {
+  opacity: 1;
+  position: static;
+}
+
+/* Content Area */
+.content-area {
+  flex-grow: 1;
+  transition: all 0.3s;
+  padding: 20px 30px;
+  /* Increased padding for better spacing */
+  width: calc(100% - 250px);
+  /* Adjust for sidebar width */
+  margin-left: 250px;
+  /* Match sidebar width */
+  margin-top: 0;
+  /* No top margin needed as main container has it */
+}
+
+/* Content area adjusts when sidebar is collapsed */
+.sidebar.collapsed~.content-area {
+  margin-left: 80px;
+  /* When sidebar is collapsed */
+  width: calc(100% - 80px);
+}
+
 
 /**/
 /* Pagination Styles */
 .pagination {
-    text-align: center;
-    margin-top: 20px;
+  text-align: center;
+  margin-top: 20px;
 }
 
 .pagination ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: inline-flex;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
 }
 
 .pagination li {
-    margin: 0;
+  margin: 0;
 }
 
 .pagination a,
 .pagination span {
-    display: block;
-    padding: 8px 12px;
-    text-decoration: none;
-    color: #333;
-    background-color: #fff;
-    border: 1px solid #dee2e6;
-    transition: background-color 0.3s, color 0.3s;
+  display: block;
+  padding: 8px 12px;
+  text-decoration: none;
+  color: #333;
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  transition: background-color 0.3s, color 0.3s;
 }
 
 .pagination li:first-child a,
 .pagination li:first-child span {
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
 }
 
 .pagination li:last-child a,
 .pagination li:last-child span {
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
 }
 
 .pagination li:not(:first-child) a,
 .pagination li:not(:first-child) span {
-    border-left: none;
+  border-left: none;
 }
 
 .pagination a:hover {
-    background-color: #e9ecef;
-    color: #0056b3;
-    z-index: 2;
-    position: relative;
+  background-color: #e9ecef;
+  color: #0056b3;
+  z-index: 2;
+  position: relative;
 }
 
 .pagination .active span {
-    background-color: #245FE9;
-    color: white;
-    border-color: #245FE9;
-    z-index: 3;
-    position: relative;
+  background-color: #245FE9;
+  color: white;
+  border-color: #245FE9;
+  z-index: 3;
+  position: relative;
 }
 
 .pagination .disabled span {
-    color: #6c757d;
-    pointer-events: none;
-    background-color: #fff;
+  color: #6c757d;
+  pointer-events: none;
+  background-color: #fff;
 }
+
 /**/
+
+@media (max-width: 768px) {
+
+  .header,
+  .filters,
+  .buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .user-info,
+  .date-info {
+    text-align: right;
+  }
+
+  .btn.view,
+  .btn.add,
+  .btn.manage {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  th,
+  td {
+    font-size: 12px;
+  }
+
+  .controls {
+    flex-direction: column;
+    /* Stack controls vertically */
+    align-items: flex-start;
+    /* Align controls to the left */
+    gap: 10px;
+    /* Add spacing between stacked controls */
+  }
+
+  .search-container {
+    width: 100%;
+    /* Make search input full width */
+  }
+
+  .row {
+    flex-direction: column;
+  }
+}

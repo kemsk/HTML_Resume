@@ -2,9 +2,9 @@
 {% load static %}
 {% block content %}
 <section id="statistics-content">
-  <div class="section-header mb-4">
+  <div class="section-header mb-4" style="background-color: transparent;  box-shadow: none;">
     <div class="title-section">
-      <i class="fas fa-chart-bar icon"></i><b> STATISTICS</b>
+      <i class="fas fa-chart-bar icon"></i> STATISTICS
     </div>
   </div>
   <div class="container-fluid">
@@ -49,8 +49,8 @@
 
     function fetchStats(timeframe) {
       Promise.all([
-        fetch(`/admin/xu-entry-violation/statistics?timeframe=${timeframe}`).then(response => response.json()),
-        fetch(`/admin/xu-entry-violation/violation-types?timeframe=${timeframe}`).then(response => response.json())
+        fetch(`/xu-entry-violation/statistics?timeframe=${timeframe}`).then(response => response.json()),
+        fetch(`/xu-entry-violation/violation-types?timeframe=${timeframe}`).then(response => response.json())
       ]).then(([countData, typesData]) => {
         // Update violator count
         violatorCount.textContent = countData.count;
