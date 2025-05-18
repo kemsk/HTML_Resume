@@ -1,0 +1,169 @@
+{% extends "ts_index.html" %}
+{% load static %}
+{% block content %}
+<section id="statistics-content">
+  <div class="section-header mb-4">
+    <div class="title-section">
+      <i class="fas fa-chart-bar icon"></i><b> STATISTICS</b>
+    </div>
+  </div>
+  <div class="container-fluid">
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label for="timeframe"><b>Timeframe:</b></label>
+        <select id="timeframe" class="form-select" style="width: 200px; display: inline-block;">
+          <option value="day">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+          <option value="semester">This Semester</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card p-4 shadow-sm">
+          <h5 class="mb-3">Violator Count</h5>
+          <div id="violator-count" style="font-size: 2em; color: #19387E; font-weight: bold;">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="row mt-4">
+      <div class="col-md-8">
+        <div class="card p-4 shadow-sm">
+          <h5 class="mb-3">Violation Types</h5>
+          <canvas id="violationChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Include Chart.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const timeframeSelect = document.getElementById('timeframe');
+    const violatorCount = document.getElementById('violator-count');
+    let violationChart = null;
+
+    function fetchStats(timeframe) {
+      Promise.all([
+        fetch(`/admin/xu-entry-violation/statistics?timeframe=${timeframe}`).then(response => response.json()),
+        fetch(`/admin/xu-entry-violation/violation-types?timeframe=${timeframe}`).then(response => response.json())
+      ]).then(([countData, typesData]) => {
+        // Update violator count
+        violatorCount.textContent = countData.count;
+
+        // Update violation types chart
+        const ctx = document.getElementById('violationChart').getContext('2d');
+        
+        // Destroy existing chart if it exists
+        if (violationChart) {
+          violationChart.destroy();
+        }
+
+        // Create new chart with gradient colors and more styling
+        const gradient1 = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient1.addColorStop(0, 'rgba(255, 99, 132, 0.8)');
+        gradient1.addColorStop(1, 'rgba(255, 99, 132, 0.2)');
+
+        const gradient2 = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient2.addColorStop(0, 'rgba(54, 162, 235, 0.8)');
+        gradient2.addColorStop(1, 'rgba(54, 162, 235, 0.2)');
+
+        const gradient3 = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient3.addColorStop(0, 'rgba(255, 206, 86, 0.8)');
+        gradient3.addColorStop(1, 'rgba(255, 206, 86, 0.2)');
+
+        const gradient4 = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient4.addColorStop(0, 'rgba(75, 192, 192, 0.8)');
+        gradient4.addColorStop(1, 'rgba(75, 192, 192, 0.2)');
+
+        violationChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: typesData.labels,
+            datasets: [{
+              label: 'Violation Counts',
+              data: typesData.counts,
+              backgroundColor: [gradient1, gradient2, gradient3, gradient4],
+              borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)'
+              ],
+              borderWidth: 2,
+              borderRadius: 10,
+              hoverBackgroundColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)'
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: {
+                display: true,
+                text: 'Violation Types Breakdown',
+                font: {
+                  size: 18,
+                  weight: 'bold'
+                }
+              },
+              legend: {
+                display: false
+              },
+              tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.7)',
+                titleColor: 'white',
+                bodyColor: 'white',
+                borderColor: 'rgba(255,255,255,0.2)',
+                borderWidth: 1
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: {
+                  color: 'rgba(0,0,0,0.1)'
+                },
+                title: {
+                  display: true,
+                  text: 'Number of Violations',
+                  font: {
+                    size: 12,
+                    weight: 'bold'
+                  }
+                }
+              },
+              x: {
+                grid: {
+                  display: false
+                }
+              }
+            },
+            animation: {
+              duration: 1500,
+              easing: 'easeOutQuart'
+            }
+          }
+        });
+      });
+    }
+
+    // Initial load
+    fetchStats(timeframeSelect.value);
+
+    // Event listener for timeframe changes
+    timeframeSelect.addEventListener('change', function() {
+      fetchStats(this.value);
+    });
+  });
+</script>
+{% endblock %}

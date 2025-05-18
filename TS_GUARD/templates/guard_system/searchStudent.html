@@ -1,0 +1,227 @@
+{% extends "tsg_index.html" %}
+{% block content %}
+
+<section id="student-search-content">
+  <!-- Page Header -->
+  <div class="section-header d-flex justify-content-between align-items-center mb-4">
+    <div class="title-section d-flex align-items-center">
+      <i class="fas fa-search icon"></i>
+      <b> STUDENT SEARCH</b>
+    </div>
+  </div>
+
+  <!-- Search Form Section -->
+  <div class="invi-container d-flex gap-4 mb-4">
+    <!-- LEFT PANEL - Search Results Table -->
+    <aside class="options-container p-3 left-panel flex-shrink-0" style="width: 45%; border-radius: 10px; background: #fff; box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);">
+      <form id="student-search-form">
+        <label for="search-student-id" class="form-label"><b>Student ID:</b></label>
+        <input type="text" class="form-control" id="search-student-id" placeholder="Enter Student ID">
+        <label for="search-first-name" class="form-label"><b>First Name:</b></label>
+        <input type="text" class="form-control" id="search-first-name" placeholder="Enter First Name">
+        <label for="search-last-name" class="form-label"><b>Last Name:</b></label>
+        <input type="text" class="form-control" id="search-last-name" placeholder="Enter Last Name">
+        <div class="mt-3 d-flex align-items-right" style="gap: 10px;">
+          <button type="button" class="btn btn-outline-danger" style="width: auto;" id="clear-btn">Clear</button>
+          <button type="submit" class="btn btn-primary me-2" style="width: auto;">Search</button>
+        </div>
+      </form>
+    </aside>
+
+    <!-- RIGHT PANEL - Selected Student Details -->
+    <section class="options-container p-3 right-panel flex-grow-1" style="background: #fff; border-radius: 10px; box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);">
+      <h5><b>Search Results</b></h5>
+      <div class="table-responsive mt-2">
+        <table class="table table-hover mb-0">
+          <style>
+            .clickable-student-id {
+              color: #0056b3;
+              text-decoration: underline;
+              cursor: pointer;
+              background-color: #eef6ff;
+              transition: background 0.2s, color 0.2s;
+            }
+            .clickable-student-id:hover {
+              background-color: #cce3ff;
+              color: #003366;
+            }
+          </style>
+          <thead>
+            <tr>
+              <th>Student ID</th>
+              <th>Name</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="results-table-body">
+            <tr>
+              <td colspan="3" class="text-center text-muted">No results found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="options-container p-3 right-panel flex-grow-1" style="background: #fff; border-radius: 10px; box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);">
+      <h5><b>Student Details</b></h5>
+      <div class="row mt-2">
+        <!-- Right Column - Student Photo -->
+        <div class="col-md-6">
+          <div class="student-details p-3 text-center">
+            <img id="student-photo" src="{{ student.photo_blob|default_if_none:''|yesno:'data:image/jpeg;base64,' }},{{ student.photo_blob|default_if_none:'' }}{% if not student.photo_blob %}http://127.0.0.1:8003/media/student_photos/{{ student.photo|default:'placeholder.jpg' }}{% endif %}" class="img-fluid id-photo mb-3 rounded" style="max-width: 200px;">
+          </div>
+        </div>
+
+        <!-- Left Column - Student Info -->
+        <div class="col-md-6">
+          <div class="ticket-details">
+            <p><strong>Student Name:</strong><br><br></p>
+            <p><strong>Student ID:</strong><br><br></p>
+            <p><strong>College:</strong><br><br></p>
+            <p><strong>Course & Year:</strong><br><br></p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("student-search-form").addEventListener("submit", function (e) {
+      e.preventDefault(); // Prevent form submission
+      searchStudents();
+    });
+
+    document.getElementById("clear-btn").addEventListener("click", clearForm);
+  });
+
+  async function searchStudents() {
+    console.log('Starting student search...');
+    const firstName = document.getElementById("search-first-name").value.trim();
+    const lastName = document.getElementById("search-last-name").value.trim();
+    const studentId = document.getElementById("search-student-id").value.trim();
+
+    // Validate at least one search parameter is provided
+    if (!firstName && !lastName && !studentId) {
+      alert("Please provide at least one search parameter.");
+      return;
+    }
+
+    // Construct query parameters manually to ensure correct URL encoding
+    const queryParams = [];
+    if (firstName) queryParams.push(`first_name=${encodeURIComponent(firstName)}`);
+    if (lastName) queryParams.push(`last_name=${encodeURIComponent(lastName)}`);
+    if (studentId) queryParams.push(`student_id=${encodeURIComponent(studentId)}`);
+
+    const url = `http://localhost:8003/xu-directory/dev/api/student?${queryParams.join('&')}`;
+    console.log('Fetch URL:', url);
+
+    try {
+      console.log('Sending fetch request...');
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Fetch Error:', {
+            status: response.status,
+            statusText: response.statusText,
+            errorDetails: errorText
+          });
+          throw new Error(`HTTP error! Status: ${response.status}, Details: ${errorText}`);
+        }
+
+      const data = await response.json();
+      console.log("Received students:", data);
+
+      const tableBody = document.getElementById("results-table-body");
+      tableBody.innerHTML = "";
+
+      if (!data.students || data.students.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">No results found.</td></tr>`;
+        return;
+      }
+
+      data.students.forEach((student) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><span class="clickable-student-id">${student.student_id}</span></td>
+          <td>${student.last_name}, ${student.first_name}</td>
+          <td>
+            <button class="btn btn-sm btn-primary add-violation" 
+                    data-student-id="${student.student_id}"
+                    data-first-name="${student.first_name}"
+                    data-last-name="${student.last_name}">
+              Add Violation
+            </button>
+          </td>
+        `;
+        
+        // Make student ID clickable to show details
+        const studentIdCell = row.querySelector('.clickable-student-id');
+        studentIdCell.addEventListener('click', () => showStudentDetails(student));
+        
+        // Add violation button functionality
+        const addViolationBtn = row.querySelector('.add-violation');
+        addViolationBtn.addEventListener('click', () => {
+          // Store student details in localStorage for the add violation page
+          console.log('Storing student data:', {
+            student_id: student.student_id,
+            first_name: student.first_name,
+            last_name: student.last_name
+          });
+          localStorage.setItem('selectedStudent', JSON.stringify({
+            student_id: student.student_id,
+            first_name: student.first_name,
+            middle_name: student.middle_name,
+            last_name: student.last_name,
+            photo: student.photo // pass the photo filename to addViolation page
+          }));
+          // Redirect to add violation page
+          window.location.href = '/user/xu-entry-violation/create-ticket';
+        });
+
+        tableBody.appendChild(row);
+      });
+
+    } catch (error) {
+      console.error("Error fetching student data:", error);
+      alert("An error occurred while fetching student data. Check the console for details.");
+    }
+  }
+
+  function clearForm() {
+    document.getElementById("search-student-id").value = "";
+    document.getElementById("search-first-name").value = "";
+    document.getElementById("search-last-name").value = "";
+
+    const tableBody = document.getElementById("results-table-body");
+    tableBody.innerHTML = `<tr><td colspan="2" class="text-center text-muted">No results found.</td></tr>`;
+
+    // Clear student details section
+    document.querySelector(".ticket-details").innerHTML = "";
+    document.querySelector(".student-details img").src = "placeholder.jpg";
+  }
+
+  function showStudentDetails(student) {
+    const detailSection = document.querySelector(".ticket-details");
+    detailSection.innerHTML = `
+      <p><strong>Student Name:</strong><br> ${student.last_name}, ${student.first_name} ${(student.middle_name ? student.middle_name.charAt(0) + '.' : '')}</p>
+      <p><strong>Student ID:</strong><br> ${student.student_id}</p>
+      <p><strong>College:</strong><br> ${student.college}</p>
+      <p><strong>Course & Year:</strong><br> ${student.course} - ${student.year_level}</p>
+    `;
+
+    // If student image URL is provided
+    const imgElement = document.querySelector(".student-details img");
+    imgElement.src = `http://localhost:8003/media/student_photos/${student.photo || 'placeholder.jpg'}`;
+  }
+</script>
+{% endblock %}

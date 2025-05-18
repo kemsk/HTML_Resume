@@ -1,0 +1,224 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XU SSIO - Admin Dashboard</title>
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <!-- CSS Links -->
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- JS Links -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const django_jwt_token = "{{ request.session.jwt_token|default:'' }}";
+  </script>
+</head>
+
+<body>
+
+  <!-- Header Section -->
+  <div class="header d-flex justify-content-between align-items-center p-3">
+    <div class="header-title">
+      <div class="title-small"><strong>XU SSIO</strong></div>
+      <div class="title-large"><strong>ENTRY VIOLATION SYSTEM</strong></div>
+    </div>
+
+    <div class="user-info d-flex align-items-center">
+      <div class="user-details text-end dropdown">
+        <button class="btn dropdown-toggle d-flex align-items-center gap-2" type="button" id="userDropdown"
+          data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="fa-solid fa-user"></i>
+          <div class="text-start">
+            {% if request.session.user_authenticated %}
+              <div class="fw-bold">
+                {{ request.session.ssio_lname }}, {{ request.session.ssio_fname }}
+              </div>
+              <small class="text-muted">SSIO {{ request.session.users_role }}</small>
+            {% else %}
+              <div class="fw-bold">Guest</div>
+              <small class="text-muted">SSIO Guest</small>
+            {% endif %}
+          </div>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+          <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal"><i class="fas fa-sign-out"></i>   Logout</a></li>
+          <li><a class="dropdown-item" href="#" onclick="openEditProfileModal(
+              '{{ request.session.ssio_user_id }}', 
+              '{{ request.session.ssio_fname|escapejs }}', 
+              '{{ request.session.ssio_lname|escapejs }}', 
+              '{{ request.session.ssio_email|escapejs }}', 
+              '',  // Pass empty string for password (don't prefill)
+              ''   // Pass empty string for pin (don't prefill)
+            ); return false;" data-bs-toggle="modal" data-bs-target="#editProfileModal"><i class="fa-solid fa-gear"></i> Edit Profile Details</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Navigation Buttons -->
+  <div class="nav buttons d-flex flex-wrap align-items-center p-3">
+    <a href="{% url 'ts_guard:Dashboard' %}" class="btn manage me-2 mb-2">
+      <i class="fas fa-eye icon me-1" aria-hidden="true"></i><b>VIEW VIOLATIONS</b>
+    </a>
+    <a href="{% url 'ts_guard:SearchStudent' %}" class="btn manage me-2 mb-2">
+      <i class="fas fa-plus-circle icon me-1" aria-hidden="true"></i><b>ADD VIOLATION</b>
+    </a>
+
+
+    <div class="date-info ms-auto text-end">
+      <div id="current-date"></div>
+      <div id="current-time"></div>
+    </div>
+  </div>
+
+  <div class="horizontal-line my-3"></div>
+
+  <!-- Logout Modal -->
+  <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body text-center">
+          <p>Are you sure you want to logout, <strong> {{ request.session.ssio_fname }} {{ request.session.ssio_lname }}</strong>?</p>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" onclick="location.reload()">Cancel</button>
+          <a href="{% url 'ts_guard:logout' %}" class="btn btn-outline-primary">Logout</a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editProfileModalLabel">Edit Profile Details</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="manage-profile-edit-form" method="post" action="">
+  
+              <input type="hidden" name="ssio_id" id="modal-edit-self-id" value="{{ user.ssio_id }}">
+  
+              <div class="mb-3">
+                <label for="modal-edit-self-fname">First Name</label>
+                <input type="text" name="fname" id="modal-edit-self-fname" class="form-control">
+              </div>
+  
+              <div class="mb-3">
+                <label for="modal-edit-self-lname">Last Name</label>
+                <input type="text" name="lname" id="modal-edit-self-lname" class="form-control">
+              </div>
+  
+              <div class="mb-3">
+                <label for="modal-edit-self-email">Email</label>
+                <input type="email" name="email" id="modal-edit-self-email" class="form-control">
+              </div>
+
+              <div class="mb-3">
+                <label for="modal-edit-self-password">Password</label>
+                <input type="password" name="password" id="modal-edit-self-password" class="form-control">
+              </div>
+
+              <div class="mb-3">
+                <label for="modal-edit-self-confirm-password">Confirm Password</label>
+                <input type="password" name="confirm_password" id="modal-edit-self-confirm-password" class="form-control">
+              </div>
+
+              <div class="mb-3">
+                <label for="modal-edit-self-userpin">Pin</label>
+                <input type="password" name="ssio_userpin" id="modal-edit-self-userpin" class="form-control">
+              </div>
+
+              <div class="mb-3">
+                <label for="modal-edit-self-confirm-userpin">Confirm Pin</label>
+                <input type="password" name="confirm_userpin" id="modal-edit-self-confirm-userpin" class="form-control">
+              </div>
+  
+              
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="location.reload()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+
+  <!-- Dynamic Content -->
+  {% block content %}
+  {% endblock content %}
+
+  <!-- Live Clock Script -->
+  <script>
+    function updateDateTime() {
+      const now = new Date();
+      const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const timeOptions = { hour: '2-digit', minute: '2-digit' };
+
+      document.getElementById('current-date').textContent = now.toLocaleDateString(undefined, dateOptions);
+      document.getElementById('current-time').textContent = now.toLocaleTimeString(undefined, timeOptions);
+    }
+
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const buttons = document.querySelectorAll('.buttons .btn');
+      const sections = document.querySelectorAll('.content-section');
+
+      buttons.forEach(button => {
+        button.addEventListener('click', function () {
+          buttons.forEach(btn => btn.classList.remove('active-btn'));
+          sections.forEach(section => section.style.display = 'none');
+
+          this.classList.add('active-btn');
+
+          const targetId = this.id + '-content';
+          const targetSection = document.getElementById(targetId);
+          if (targetSection) targetSection.style.display = 'block';
+        });
+      });
+    });
+
+    function openEditProfileModal(ssio_id, fname, lname, email, password, userpin) {
+      // Set form field values
+      document.getElementById('modal-edit-self-id').value = ssio_id;
+      document.getElementById('modal-edit-self-fname').value = fname;
+      document.getElementById('modal-edit-self-lname').value = lname;
+      document.getElementById('modal-edit-self-email').value = email;
+      document.getElementById('modal-edit-self-password').value = password;
+      document.getElementById('modal-edit-self-userpin').value = userpin;
+
+      // Set the form's action URL dynamically
+      const editForm = document.getElementById('manage-profile-edit-form');
+      if (editForm) {
+        editForm.action = `/user/xu-entry-violation/profile/update/${ssio_id}/`;
+        console.log("Form action set to:", editForm.action);
+      }
+
+      // Show the Bootstrap modal
+      const editModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+      editModal.show();
+    }
+  </script>
+
+</body>
+
+</html>

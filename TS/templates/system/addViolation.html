@@ -1,0 +1,352 @@
+{% extends "ts_index.html" %}
+{% block content %}
+<section id="add-violation-content">
+  <div class="section-header mb-4">
+    <div class="title-section">
+      <i class="fas fa-plus-circle icon"></i><b> VIOLATION TICKET</b>
+    </div>
+  </div>
+
+  <div class="container-fluid">
+    <form id="add-violation-form">
+
+      <!-- Ticket Number -->
+      <div class="row mb-3">
+        <div class="col-12 d-flex align-items-center ps-4">
+          <h2 class="me-3 mb-0"><b>Ticket #{{ ticket_id }}</b></h2>
+          <input type="hidden" id="ticket_id" name="ticket_id" value="{{ ticket_id }}">
+        </div>
+      </div>
+
+      <div class="row g-3">
+
+
+        <!-- Violation Type, Photo, Description -->
+        <div class="col-md-3">
+          <div class="violations-details p-3">
+            <p><b>Violation Type:</b></p>
+            <div><input type="checkbox" name="violation_types" id="id_violation" value="id_violation"> ID Violation</div>
+            <div><input type="checkbox" name="violation_types" id="dress_code_violation" value="dress_code_violation"> Dress Code Violation</div>
+            <div><input type="checkbox" name="violation_types" id="uniform_violation" value="uniform_violation"> Uniform Violation</div>
+
+            <label for="photo-proof" class="mt-3"><b>Photo Proof:</b></label>
+            <input type="file" id="photo-proof" name="photo" capture="proof" accept=".jpg,.jpeg,.png,.svg" class="form-control mb-3">
+
+            <label for="description"><b>Description:</b></label>
+            <input type="text" id="description" name="description" class="form-control">
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="col-md-1 d-flex justify-content-center align-items-center">
+          <div style="border-left: 1px solid #ccc; height: 100%;"></div>
+        </div>
+
+        <!-- Student Photo + Details -->
+        <div class="col-md-3">
+          <div class="student-photo text-center">
+            <h4><b>Student Details</b></h4>
+            <div class="student-photo-display text-center mb-3">
+              <img id="student-photo" src="{{ student.photo_blob|default_if_none:''|yesno:'data:image/jpeg;base64,' }},{{ student.photo_blob|default_if_none:'' }}{% if not student.photo_blob %}http://127.0.0.1:8003/media/student_photos/{{ student.photo|default:'placeholder.jpg' }}{% endif %}" class="img-fluid id-photo mb-3 rounded" style="width: 160px; height: 220px; object-fit: cover; border: 2px solid #DCDCDD;">
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="student-details mt-2 p-3">
+
+            <label for="student-first-name"><b>First Name:</b></label>
+            <input type="text" id="student-first-name" name="student-first-name" class="form-control" readonly>
+
+            <label for="student-middle-name"><b>Middle Name:</b></label>
+            <input type="text" id="student-middle-name" name="student-middle-name" class="form-control" readonly>
+
+            <label for="student-last-name"><b>Last Name:</b></label>
+            <input type="text" id="student-last-name" name="student-last-name" class="form-control mb-2" readonly>
+
+            <label for="student-id"><b>Student ID:</b></label>
+            <input type="number" id="student-id" name="student-id" class="form-control mb-3" readonly>
+
+            <div class="d-flex justify-content-end">
+              <a href="{% url 'ts:SearchStudent' %}" class="btn btn-outline-danger cancel-btn mt-5 me-2">CANCEL</a>
+              <button id="confirm-btn" type="submit" class="btn btn-primary confirm-btn mt-5">CONFIRM</button>
+<!-- Full-page overlay spinner -->
+<div id="overlay-loader" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.7); z-index:2000; justify-content:center; align-items:center;">
+  <div class="spinner-border text-primary" style="width:4rem; height:4rem;" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </form>
+</div>
+</section>
+<script>
+  // JWT Authentication Functions
+function getJWTToken() {
+    return sessionStorage.getItem('jwt_token') || '{{ request.session.jwt_token|default:"" }}' || '';
+}
+
+function storeJWTToken(token) {
+    if (token) {
+        sessionStorage.setItem('jwt_token', token);
+    }
+}
+
+function getAuthHeaders() {
+    const token = getJWTToken();
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+    };
+}
+
+async function fetchWithAuth(url, options = {}) {
+    const headers = {
+        ...getAuthHeaders(),
+        ...(options.headers || {})
+    };
+
+    const response = await fetch(url, {
+        ...options,
+        headers
+    });
+
+    if (response.status === 401) {
+        console.error('Authentication failed. Token may be expired.');
+    }
+
+    return response;
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const selectedStudent = localStorage.getItem('selectedStudent');
+    if (selectedStudent) {
+        // Wait for DOM to fully load the input fields
+        setTimeout(() => {
+            const student = JSON.parse(selectedStudent);
+            console.log('Retrieved student:', student);
+
+            // Optional: Add hidden inputs for form submission
+            const form = document.getElementById('add-violation-form');
+            form.innerHTML += `
+                <input type="hidden" name="student_id" value="${student.student_id}">
+                <input type="hidden" name="student_first_name" value="${student.first_name}">
+                <input type="hidden" name="student_last_name" value="${student.last_name}">
+            `;
+
+            // Fill the form fields with student data
+            document.getElementById('student-first-name').value = student.first_name || '';
+            document.getElementById('student-middle-name').value = student.middle_name || '';
+            document.getElementById('student-last-name').value = student.last_name || '';
+            document.getElementById('student-id').value = student.student_id || '';
+
+            // Set student photo if available
+            document.getElementById('student-photo').src = `http://127.0.0.1:8003/media/student_photos/${student.photo || 'placeholder.jpg'}`;
+
+            // Clear localStorage after retrieving
+            localStorage.removeItem('selectedStudent');
+        }, 100);
+    } else {
+        console.warn('No student data found in localStorage');
+    }
+
+    // Define the form variable here AFTER DOM content is loaded
+    const form = document.getElementById('add-violation-form');
+
+    form.addEventListener("submit", async function(event) {
+        event.preventDefault(); // stop default form post
+
+        // Show overlay loader and disable button
+        const confirmBtn = document.getElementById('confirm-btn');
+        const overlayLoader = document.getElementById('overlay-loader');
+        confirmBtn.disabled = true;
+        overlayLoader.style.display = 'flex';
+
+        // Gather all fields
+        const ticket_id = document.getElementById("ticket_id").value;
+        const remarks = document.getElementById("description").value;
+        const student_id = document.getElementById("student-id").value;
+        const fname = document.getElementById("student-first-name").value;
+        const mname = document.getElementById("student-middle-name").value;
+        const lname = document.getElementById("student-last-name").value;
+
+        // Gather violations
+        const violations = [];
+        document.querySelectorAll('input[name="violation_types"]:checked').forEach(cb => {
+            violations.push(cb.value);
+        });
+
+        if (violations.length === 0) {
+            alert("Please select at least one violation type.");
+            return;
+        }
+
+        // Handle photo file as base64
+        const photoInput = document.getElementById("photo-proof");
+        let photoBase64 = null;
+        let photoName = null;
+        if (photoInput && photoInput.files.length > 0) {
+            const file = photoInput.files[0];
+            photoName = file.name;
+            // Read file as base64
+            photoBase64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]); // remove data:mime/type;base64,
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Construct payload
+        const payload = {
+            ticket_id,
+            violations,
+            remarks,
+            student_id,
+            fname,
+            mname,
+            lname,
+            photo: photoBase64,
+            photo_name: photoName
+        };
+
+        fetchWithAuth("/admin/xu-entry-violation/create-ticket", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": getCSRFToken()
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(async response => {
+            const contentType = response.headers.get("content-type") || "";
+            if (!response.ok) {
+                const errorMessage = contentType.includes("application/json")
+                    ? (await response.json()).error
+                    : await response.text();
+                throw new Error(errorMessage);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                setTimeout(() => get_ticket_data(ticket_id), 300);
+            } else {
+                alert("Ticket not created: " + data.error);
+            }
+        })
+        .catch(error => {
+            alert("Error: " + error.message);
+        })
+        .finally(() => {
+            confirmBtn.disabled = false;
+            overlayLoader.style.display = 'none';
+        });
+    });
+});
+
+function get_ticket_data(ticketId) {
+  fetchWithAuth(`/ts/dev/api/${ticketId}/get-ticket`, {
+    method: "GET",
+    headers: {
+      "X-CSRFToken": getCSRFToken()
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error("Failed to fetch ticket data");
+    }
+    return response.json();
+  })
+  .then(data => {
+    const ticket = data.ticket;
+    const student = data.student;
+    send_ticket(ticket, student)
+  })
+  .catch(error => {
+    console.error("Error fetching ticket data:", error);
+    alert("Could not fetch ticket data.");
+  });
+}
+    
+function send_ticket(ticket, student){
+  const token = getJWTToken();
+  fetch(`http://localhost:8001/evs/dev/api/ticket-submission`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      ticket: ticket,
+      student: student
+    })
+  })
+  .then(response => {
+    if (response.ok)
+    {
+      alert('Ticket Submitted Successfully.');
+      window.location.href='{% url "ts:SearchStudent" %}';
+    }
+  })
+  .catch(error => {
+    console.error("Failed to submit ticket to OSA", error);
+    alert("Could not fetch ticket data.");
+  });
+}
+
+function getCSRFToken() {
+  // Try to get from cookie (Django default)
+  let token = '';
+  const cookieString = document.cookie;
+  if (cookieString) {
+    const csrfCookie = cookieString
+      .split(';')
+      .map(cookie => cookie.trim())
+      .find(cookie => cookie.startsWith('csrftoken='));
+    if (csrfCookie) {
+      token = csrfCookie.split('=')[1];
+    }
+  }
+  // Fallback: try to get from hidden input (for forms rendered by Django)
+  if (!token) {
+    const input = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (input) token = input.value;
+  }
+  return token;
+}
+
+// Read query parameters and localStorage on page load
+window.onload = function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedStudent = JSON.parse(localStorage.getItem('selectedStudent') || '{}');
+
+    // Prioritize localStorage data over URL parameters
+    const studentId = selectedStudent.student_id || urlParams.get('student_id');
+    const firstName = selectedStudent.first_name || urlParams.get('fname');
+    const lastName = selectedStudent.last_name || urlParams.get('lname');
+
+    if (studentId) {
+      document.getElementById('student-id').value = studentId;
+    }
+    if (firstName) {
+      document.getElementById('student-first-name').value = firstName;
+    }
+    if (lastName) {
+      document.getElementById('student-last-name').value = lastName;
+    }
+
+    // Clear localStorage after populating fields
+    localStorage.removeItem('selectedStudent');
+    if (urlParams.has('mname')) {
+      document.getElementById("student-middle-name").value = urlParams.get("mname");
+    }
+    if (urlParams.has('lname')) {
+      document.getElementById("student-last-name").value = urlParams.get("lname");
+    }
+  };
+  
+</script>
+{% endblock %}

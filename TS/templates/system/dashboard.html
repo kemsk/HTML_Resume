@@ -1,0 +1,313 @@
+{% extends "ts_index.html" %}
+
+{% block title %}
+  <title>XU SSIO - Dashboard</title>
+{% endblock title %}
+
+{% block page_name %}
+  <h5 class="col-6"><i class='bx bx-home-alt'></i>Dashboard</h5>
+{% endblock page_name %}
+
+{% block content %}
+  <div id="view-violations-content">
+    <section id="view-violations-section">
+      <div class="section-header d-flex justify-content-between align-items-center">
+        <div class="title-section">
+          <i class="fas fa-table"></i><b> TICKETS</b>
+        </div>
+
+        <div class="controls">
+          <form action="{% url 'ts:Dashboard' %}" class="search-form">
+            <button>Filters:</button>
+            <input id="filter_date" name="filter_date" type="date" value="{{ request.GET.filter_date|default:'' }}">
+            <input id="student_name" name="student_name" type="text" placeholder="Search Student Name" value="{{ request.GET.student_name|default:'' }}">
+            <input id="student_id" name="student_id" type="text" placeholder="Search Student ID" value="{{ request.GET.student_id|default:'' }}">
+            <button type="submit">Search</button>
+            {% if request.GET.student_name or request.GET.student_id or request.GET.filter_date %}
+                <a href="{% url 'ts:Dashboard' %}"><button type="button">Clear</button></a>
+            {% endif %}
+        </form>
+        </div>
+      </div>
+
+      <div class="container mt-3">
+        <table id="violations-table" class="table text-center">
+          <thead>
+            <tr>
+              <th>Ticket #</th>
+              <th>Student ID</th>
+              <th>Student Name</th>
+              <th>Violation Type</th>
+              <th>Date/Time</th>
+              <th>OSA Status</th>
+              <th>ID Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="violations-table-body">
+            {% for ticket in tickets %}
+              <tr>
+                <td>{{ ticket.ticket_id }}</td>
+                <td>{{ ticket.student_id }}</td>
+                <td>{{ ticket.student.last_name }}, {{ ticket.student.first_name }} {{ ticket.student.middle_name }}</td>
+                <td>
+                    {% if ticket.uniform_violation %}Uniform Violation<br> {% endif %}
+                    {% if ticket.dress_code_violation %}Dress Code Violation<br> {% endif %}
+                    {% if ticket.id_violation %}ID Violation<br> {% endif %}
+                    {% if ticket.id_not_claimed_violation %}ID Not Claimed Violation{% endif %}
+                </td>
+                <td>{{ ticket.date_created }}</td>
+                <td {% if ticket.ticket_status != 1 and ticket.ticket_status != 2 %} class="status-pending"
+                    {% elif ticket.ticket_status != 0 and ticket.ticket_status != 2 %} class="status-resolved"
+                    {% else %} class="status-cleared" {% endif %}>
+                    {% if ticket.ticket_status != 1 and ticket.ticket_status != 2 %} Pending
+                    {% elif ticket.ticket_status != 0 and ticket.ticket_status != 2 %} Resolved 
+                    {% else %} Cleared {% endif %}
+                </td>
+                <td>
+                    {% if ticket.id_status == 0 %}
+                      <form>
+                          <input type="hidden" name="status" value="1">
+                          <button type="button" class="controls-unclaimed" onclick="update_id({{ticket.ticket_id}}, 1)"{% if ticket.ticket_status == 0 %} disabled {% endif %}>Unclaimed</button>
+                      </form>
+                    {% else %}
+                        <button type="button" class="controls-claimed" disabled>Claimed</button>
+                    {% endif %}
+                </td>
+                <td>
+                  <div>
+                    <form action="{% url 'ts:TicketDetails' ticket.ticket_id %}">
+                        <button class="controls-unclaimed">View</button>
+                    </form>
+                    <button class="controls-claimed" onclick=check_ticket({{ticket.ticket_id}})>resend</button>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="8" class="text-center">No violations found.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+<div class="pagination justify-content-center">
+    <ul>
+        {% if tickets.has_previous %}
+        <li><a href="{% url 'ts:Dashboard' %}?page={{ tickets.previous_page_number }}{% if request.GET.student_name %}&student_name={{ request.GET.student_name }}{% endif %}{% if request.GET.student_id %}&student_id={{ request.GET.student_id }}{% endif %}">&laquo; Previous</a></li>
+        {% else %}
+        <li class="disabled"><span>&laquo; Previous</span></li>
+        {% endif %}
+        
+        {% for i in tickets.paginator.page_range %}
+            {% if tickets.number == i %}
+                <li class="active"><span>{{ i }}</span></li>
+            {% else %}
+                <li><a href="{% url 'ts:Dashboard' %}?page={{ i }}{% if request.GET.student_name %}&student_name={{ request.GET.student_name }}{% endif %}{% if request.GET.student_id %}&student_id={{ request.GET.student_id }}{% endif %}">{{ i }}</a></li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if tickets.has_next %}
+        <li><a href="{% url 'ts:Dashboard' %}?page={{ tickets.next_page_number }}{% if request.GET.student_name %}&student_name={{ request.GET.student_name }}{% endif %}{% if request.GET.student_id %}&student_id={{ request.GET.student_id }}{% endif %}">Next &raquo;</a></li>
+        {% else %}
+        <li class="disabled"><span>Next &raquo;</span></li>
+        {% endif %}
+    </ul>
+</div>
+  <script>
+    const token = sessionStorage.getItem('jwt_token') || '{{ request.session.jwt_token }}' || '';
+    document.addEventListener('DOMContentLoaded', function () {
+      const table = document.getElementById('violations-table');
+      const headers = table.querySelectorAll('th');
+      let sortDirection = 1; // 1 = asc, -1 = desc
+      let currentSortedColumn = -1;
+  
+      headers.forEach((header, index) => {
+          header.style.cursor = 'pointer';
+          header.addEventListener('click', () => {
+              if (currentSortedColumn === index) {
+                  sortDirection *= -1; // Toggle direction
+              } else {
+                  sortDirection = 1; // Default to ascending
+                  currentSortedColumn = index;
+              }
+  
+              const tbody = table.querySelector('tbody');
+              const rows = Array.from(tbody.querySelectorAll('tr'))
+                  .filter(row => row.querySelectorAll('td').length > 0); // Ignore empty or no-data rows
+  
+              rows.sort((a, b) => {
+                  const cellA = a.querySelectorAll('td')[index].innerText.trim().toLowerCase();
+                  const cellB = b.querySelectorAll('td')[index].innerText.trim().toLowerCase();
+  
+                  // Try to compare as numbers first
+                  const numA = parseFloat(cellA);
+                  const numB = parseFloat(cellB);
+  
+                  if (!isNaN(numA) && !isNaN(numB)) {
+                      return (numA - numB) * sortDirection;
+                  }
+  
+                  return cellA.localeCompare(cellB) * sortDirection;
+              });
+  
+              // Clear existing rows
+              rows.forEach(row => tbody.appendChild(row));
+          });
+      });
+  });
+
+  function update_id(ticket_id, status) {
+    fetch(`/admin/xu-entry-violation/ticket/${ticket_id}/update/id-status`, {
+        method: "POST",
+        headers: {
+            "Content-Type": 'application/json',
+            "X-CSRFToken": getCSRFToken(),
+            "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            status: status
+        })
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error("Server error or invalid response");
+        }
+        return res.json();
+        })
+        .then(data => {
+            get_status(ticket_id)
+        })
+        .catch(error => {
+            console.error("Error fetching ticket data:", error);
+            alert("Failed to load ticket data.");
+        });
+    }
+
+  function get_status(ticket_id){
+    fetch(`/ts/dev/api/${ticket_id}/get-status`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken(),
+        },
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error("Failed to fetch ticket data");
+          }
+          return res.json();
+    })
+    .then(data => {
+        update_id_status(ticket_id, data)
+      })
+      .catch(error => {
+        console.error("Error fetching ticket data:", error);
+        alert("Could not fetch ticket data.");
+      });
+  }
+
+  function update_id_status(ticket_id, data){
+    fetch(`http://localhost:8001/evs/dev/api/${ticket_id}/update-status`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (response.ok)
+        {
+          alert('Ticket updated.');
+          location.reload();
+        }
+      })
+      .catch(error => {
+        console.error("Failed to submit status to SSIO", error);
+        alert("Could not fetch ticket data.");
+      });
+  }
+
+  function get_ticket_data(ticketId) {
+    fetch(`/ts/dev/api/${ticketId}/get-ticket`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCSRFToken() // optional for GET, but safe to include
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch ticket data");
+      }
+      return response.json();
+    })
+    .then(data => {
+      const ticket = data.ticket;
+      const student = data.student;
+      send_ticket(ticket, student)
+    })
+    .catch(error => {
+      console.error("Error fetching ticket data:", error);
+      alert("Could not fetch ticket data.");
+    });
+  }
+
+  function check_ticket(ticket_id){
+    fetch(`http://localhost:8001/evs/dev/api/${ticket_id}/check_ticket`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            get_ticket_data(ticket_id); 
+        } else {
+            alert("Ticket already sent to OSA.");
+            location.reload();
+        }
+    })
+    .catch(err => {
+        console.error("Error posting to external system:", err);
+    });
+  }
+      
+  function send_ticket(ticket, student){
+    fetch(`http://localhost:8001/evs/dev/api/ticket-submission`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        ticket: ticket,
+        student: student
+      })
+    })
+    .then(response => {
+      if (response.ok)
+      {
+        alert('Ticket Submitted Successfully.');
+        location.reload();
+      }
+    })
+    .catch(error => {
+      console.error("Failed to submit ticket to OSA", error);
+      alert("Could not fetch ticket data.");
+    });
+  }
+  
+  function getCSRFToken() {
+    return document.cookie
+      .split(";")
+      .find(c => c.trim().startsWith("csrftoken="))
+      ?.split("=")[1] || "";
+  }
+  </script>
+{% endblock %}

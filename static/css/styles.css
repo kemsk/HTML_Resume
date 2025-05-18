@@ -1,0 +1,499 @@
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Overpass', sans-serif;
+  margin: 0;
+  padding: 10px; /* Added 'px' to fix syntax issue */
+}
+
+.container {
+  max-width: 1100px;
+  margin: auto;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+  font-weight: 600;
+  box-shadow: 0 4px 4px -2px rgba(0, 0, 0, 0.3);
+}
+
+.header-title {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.title-small {
+  font-size: 15px;
+  color: #19387E;
+}
+
+.title-large {
+  font-size: 20px;
+  color: #19387E; /* Xavier University Dark Blue */
+  font-weight: bold;
+}
+
+.user-details {
+  text-align: left;
+  font-size: 16px;
+  color: #19387E;
+}
+
+.user-details div:first-child {
+  font-weight: bold;
+}
+
+.user-icons {
+  display: flex;
+  gap: 5px;
+}
+
+.vertical-line {
+  width: 1px; /* Width of the line */
+  height: 30px; /* Height of the line, matches icon size */
+  background-color: #ccc; /* Color of the line */
+}
+
+.horizontal-line {
+  margin: 20px;
+  height: 1px;
+  background-color: #ccc; /* Color of the line */
+}
+
+.icon-settings,
+.icon-user {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  background-size: cover;
+}
+
+/* Navigation Buttons */
+.nav.buttons {
+  margin-top: 30px;
+  gap: 20px;
+  align-items: center;
+  font-size: 16px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.button-container {
+  margin: auto;
+  padding: 20px;
+  horizontal-align: center;
+}
+
+.btn {
+  font-size: 16px;
+  width: 100%;
+  max-width: 240px;
+  transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+  
+}
+
+/* Unified button color for View, Add, and Manage */
+.btn.view, .btn.add, .btn.manage {
+  background-color: #D2DAE3; /* Light Blue background */
+  color: #162B5E; /* Xavier University Dark Blue text */
+  weight: bold;
+}
+
+/* Hover Effects */
+.btn:hover {
+  transform: translateY(-5px);  /* Adds lift effect */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Adds shadow */
+}
+
+/* Active State for clicked button */
+.buttons .btn.active {
+  background-color: #19387E; /* Xavier University Light Blue for active state */
+  color: white;
+}
+
+.btn.view:hover, .btn.add:hover, .btn.manage:hover {
+  background-color: #c0d5f3;  /* Slightly darker blue when hovered */
+}
+
+.icon {
+  display: inline-flex; /* Ensure icons are treated as block elements */
+  justify-content: center; /* Horizontally center the icon */
+  width: 20px; /* Width of the icon */
+  height: 20px; /* Height of the icon */
+  color: inherit; /* Inherit the button's text color */
+  margin: 10px; /* Margin around the icon */
+}
+
+/* For Font Awesome Icons */
+.fas {
+  font-size: 18px;
+  color: inherit;
+  width: fit-content
+}
+
+/* Date and Time Section positioned beside the buttons */
+.date-info-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%; /* Ensure it takes up full width of its container */
+  align-items: center;
+  padding: 10px 30px 30px;
+}
+
+.status-pending::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: red;
+  margin-right: 5px;
+}
+
+.status-resolved::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: rgb(60, 196, 60);
+  margin-right: 5px;
+}
+
+.status-cleared::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: rgb(0, 68, 255);
+  margin-right: 5px;
+}
+
+.today {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.date-info {
+  text-align: right;
+  font-size: 25px;
+  color: #1a3c73; /* Accent Blue */
+  font-weight: bold;
+  margin-left: auto; /* Pushes date/time to the right */
+  padding-left: 20px; /* Adds some spacing from the buttons */
+  flex-grow: 1;
+}
+
+.current-date {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* Time Section */
+.current-time {
+  font-size: 18px;
+}
+
+.content-section {
+  display: none;
+  transition: all 0.5s ease;
+}
+
+.content-section.show {
+  display: block;
+}
+
+
+.section-header {
+  align-items: center; /* Vertically center all elements */
+  max-width: 1100px; /* Match the container width */
+  margin: auto; /* Center the container horizontally */
+  padding-top: 10px;
+}
+
+.h2, .title-section {
+  max-width: 1100px;
+  color: #19387E; /* Xavier University Dark Blue */
+  font-weight: bold;
+  font-size: 25px;
+  display: flex; /* Keeps the flexbox layout */
+  justify-content: flex-start; /* Aligns content to the left */
+  align-items: center; /* Vertically centers the text (optional) */
+  border-collapse: collapse;
+  overflow: hidden;
+}
+
+.h3 {
+  max-width: 1100px;
+  color: #19387E; /* Xavier University Dark Blue */
+  align-self: center;
+}
+
+/* Controls Container */
+.controls {
+  display: flex;
+  gap: 10px; /* Spacing between controls */
+  align-items: center; /* Vertically center the controls */
+}
+
+/* Filter Button */
+.outline {
+  padding:  8px 10px;
+  color: #1a2f6b; /* Xavier University Dark Blue text */
+  border: 1px solid #DCDCDD;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 16px;
+}  
+
+
+/* View More Button */
+.view-more {
+  display: block;
+  margin: 20px auto; /* Center the button */
+  padding: 10px 20px;
+  background-color: #dbe1ee;
+  color: #1a2f6b;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.view-more:hover {
+  background-color: #c0d5f3;
+}
+
+/* Table Styles */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  margin-top: 20px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+
+th {
+  font-size: 16px;
+  font-weight: bold;
+  color: #19387E; /* White text for the header */
+  font-size: 16px;
+}
+
+tr {
+  margin-top: auto;
+  font-size: 16px;
+}
+
+td {
+  color: #333;
+  font-size: 14px;
+  font-weight: medium;
+}
+
+
+/* Status Dot Colors */
+.status-dot {
+  height: 10px;
+  width: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.Pending { background-color: red; }
+.Resolved { background-color: orange; }
+.Claimed { background-color: green; }
+.Cleared { background-color: blue; }
+
+
+.container-fluid {
+  padding: 20px;
+  max-width: 1100px;
+  margin: auto;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.row {
+  color: #19387E;
+  weight: bold;
+}
+
+
+form {
+  flex: 1; /* Ensures the form takes up equal space in a flex container */
+}
+
+.violations-details,
+.student-details {
+  flex: 1; /* Ensures both columns take up equal width */
+  display: flex;
+  flex-direction: column; /* Aligns content vertically within each column */
+  gap: 10px; /* Adds spacing between elements */
+}
+
+
+.checkboxes {
+  display: block;
+  margin-bottom: 5px;
+  cursor: pointer;
+}
+
+
+.student-photo img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border: 1px solid #C4C4C4;
+  border-radius: 5px;
+}
+
+.invi-container {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  max-width: 1100px;
+  margin: auto;
+}
+
+.left-panel {
+  flex: 0 0 25%;
+  min-width: 200px;
+}
+
+.right-panel {
+  flex: 1;
+}
+
+.options-container .btn {
+  font-weight: 500;
+  padding: 12px 16px;
+  border-radius: 8px;
+}
+
+.options-container .btn.active {
+  background-color: #0d6efd;
+  color: #fff;
+}
+
+
+@media (max-width: 768px) {
+
+  .header, .filters, .buttons {
+      flex-direction: column;
+      align-items: stretch;
+  }
+
+  .user-info, .date-info {
+      text-align: right;
+  }
+
+  .btn.view, .btn.add, .btn.manage {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+  }
+
+  th, td {
+      font-size: 12px;
+  }
+
+  .controls {
+      flex-direction: column; /* Stack controls vertically */
+      align-items: flex-start; /* Align controls to the left */
+      gap: 10px; /* Add spacing between stacked controls */
+  }
+
+  .search-container {
+      width: 100%; /* Make search input full width */
+  }
+
+  .row {
+      flex-direction: column;
+    }
+}
+
+/**/
+/* Pagination Styles */
+.pagination {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.pagination ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: inline-flex;
+}
+
+.pagination li {
+    margin: 0;
+}
+
+.pagination a,
+.pagination span {
+    display: block;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: #333;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.pagination li:first-child a,
+.pagination li:first-child span {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+
+.pagination li:last-child a,
+.pagination li:last-child span {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+.pagination li:not(:first-child) a,
+.pagination li:not(:first-child) span {
+    border-left: none;
+}
+
+.pagination a:hover {
+    background-color: #e9ecef;
+    color: #0056b3;
+    z-index: 2;
+    position: relative;
+}
+
+.pagination .active span {
+    background-color: #245FE9;
+    color: white;
+    border-color: #245FE9;
+    z-index: 3;
+    position: relative;
+}
+
+.pagination .disabled span {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+}
+/**/

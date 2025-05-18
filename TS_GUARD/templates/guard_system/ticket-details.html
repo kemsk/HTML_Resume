@@ -1,0 +1,190 @@
+{% extends "tsg_index.html" %}
+{% load static %}
+
+{% block content %}
+  <div id="ticket-details-content">
+    <div class="section-header d-flex justify-content-between align-items-center mb-4">
+      <div class="title-section">
+        <i class="fas fa-ticket-alt me-2"></i><b>TICKET DETAILS</b>
+      </div>
+      <a class="btn btn-outline-primary" href="{% url 'ts_guard:Dashboard' %}" role="button" style="padding: 4px 12px; width: 110px;">
+        <i class="fas fa-arrow-left"></i> Go Back
+      </a>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row g-4">
+
+        <!-- Ticket Header -->
+        <div class="col-12 d-flex align-items-center" style="padding-left: 30px">
+          <h2 class="me-3 mb-0"><b>Ticket #{{ ticket.ticket_id }}</b></h2>
+        </div>
+        <div class="col-12 d-flex align-items-center" style="padding-left: 30px">
+          <span {% if ticket.ticket_status != 1 and ticket.ticket_status != 2 %} class="status-pending"
+                {% elif ticket.ticket_status != 0 and ticket.ticket_status != 2 %} class="status-resolved"
+                {% else %} class="status-cleared" {% endif %}>
+              {% if ticket.ticket_status != 1 and ticket.ticket_status != 2 %} Pending
+              {% elif ticket.ticket_status != 0 and ticket.ticket_status != 2 %} Resolved 
+              {% else %} Cleared {% endif %}
+          </span>
+        </div>
+
+        <!-- Photo Proof -->
+        <div class="col-md-3">
+          <div class="violations-details p-3" style="padding-left: 35px;">
+            <p><strong>Photo Proof</strong></p>
+              <div id="photoContainer">
+                  <img id="ticketPhoto" style="max-width: 100%; display: none;" alt="Ticket photo proof">
+                  <p id="noPhotoMessage" style="display: none;">No photo available</p>
+              </div>
+          </div>
+        </div>
+
+        <!-- Ticket Details -->
+        <div class="col-md-3">
+          <div class="ticket-details p-3">
+            <p><strong>Reported on:</strong><br> {{ ticket.date_created }}</p>
+            <p><strong>Reported by:</strong><br> {{ reported_by }}</p>
+            <p><strong>Violation Type:</strong><br/>
+              {% if ticket.id_violation %} ID Violation<br> {% endif %}
+              {% if ticket.dress_code_violation %} Dress Code Violation<br> {% endif %}
+              {% if ticket.uniform_violation %} Uniform Violation<br> {% endif %}
+              {% if ticket.id_not_claimed_violation %} ID Not Claimed <br> {% endif %}
+            </p>
+            <p><strong>Description:</strong><br>{{ ticket.remarks }}</p>
+            {% if ticket.id_status != 0 %}
+              <p><strong>ID returned by:</strong><br>{{ ticket.id_returned_by }}</p>
+              <p><strong>ID returned date:</strong><br>{{ ticket.id_returned_date }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Vertical Line Divider -->
+        <div class="col-md-1 d-flex justify-content-center align-items-center">
+          <div style="border-left: 2px solid #ccc; height: 100%;"></div>
+        </div>
+
+        <!-- Student Details -->
+        <div class="col-md-4 text-center">
+          <div class="student-details p-3">
+            <h4><b>Student Details</b></h4>
+            <img src="{{ student.student_photo }}" alt="Student ID Photo" class="img-fluid id-photo mb-3"> 
+            <p><strong>Name:</strong>
+             {{ student.last_name }}, {{ student.first_name }} {{ student.middle_name }}
+            </p>
+            <p><strong>Student ID:</strong> {{ student.student_id }}</p>
+
+            {% if ticket.id_status == 0 %}
+              <form method="POST" action="{% url 'ts_guard:IDStatus' ticket.ticket_id %}">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="1">
+                <button type="button" class="controls-unclaimed" onclick="update_id({{ticket.ticket_id}}, 1)"{% if ticket.ticket_status == 0 %} disabled {% endif %}>Unclaimed</button>
+              </form>
+            {% else %}
+              <button type="button" class="controls-claimed" disabled>Claimed</button>
+            {% endif %}
+          </div>
+        </div>
+
+      </div> <!-- End Row -->
+    </div> <!-- End Container -->
+
+  </div> <!-- End Ticket Details Content -->
+<script>
+  const token = sessionStorage.getItem('jwt_token') || '{{ request.session.jwt_token }}' || '';
+    function update_id(ticket_id, status) {
+    fetch(`/user/xu-entry-violation/ticket/${ticket_id}/update/id-status`, {
+        method: "POST",
+        headers: {
+            "Content-Type": 'application/json',
+            "X-CSRFToken": getCSRFToken(),
+        },
+        body: JSON.stringify({
+            status: status
+        })
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error("Server error or invalid response");
+        }
+        return res.json();
+        })
+        .then(data => {
+            get_status(ticket_id)
+        })
+        .catch(error => {
+            console.error("Error fetching ticket data:", error);
+            alert("Failed to load ticket data.");
+        });
+    }
+
+  function get_status(ticket_id){
+    fetch(`/ts/dev/api/${ticket_id}/get-status`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken(),
+        },
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error("Failed to fetch ticket data");
+          }
+          return res.json();
+    })
+    .then(data => {
+        update_id_status(ticket_id, data)
+      })
+      .catch(error => {
+        console.error("Error fetching ticket data:", error);
+        alert("Could not fetch ticket data.");
+      });
+  }
+
+  function update_id_status(ticket_id, data){
+    fetch(`http://localhost:8001/evs/dev/api/${ticket_id}/update-status`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (response.ok)
+        {
+          alert('Ticket updated.');
+          location.reload();
+        }
+      })
+      .catch(error => {
+        console.error("Failed to submit status to SSIO", error);
+        alert("Could not fetch ticket data.");
+      });
+  }
+  
+  function getCSRFToken() {
+    return document.cookie
+      .split(";")
+      .find(c => c.trim().startsWith("csrftoken="))
+      ?.split("=")[1] || "";
+  }
+
+  async function loadImage(ticket_id) { 
+        const response = await fetch(`/ts/dev/api/${ticket_id}/get-image-url`); 
+        if (!response.ok) { 
+            document.getElementById("noPhotoMessage").style.display = "block";
+            document.getElementById("ticketPhoto").style.display = "none";
+            return;
+        } 
+        const blob = await response.blob(); 
+        const imageUrl = URL.createObjectURL(blob); 
+        const imgElement = document.getElementById("ticketPhoto"); 
+        imgElement.src = imageUrl; 
+        imgElement.style.display = "block"; 
+    } 
+
+    loadImage({{ticket.ticket_id}})
+</script>
+{% endblock %}
+

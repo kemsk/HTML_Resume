@@ -1,0 +1,18 @@
+from django.urls import path
+from . import views
+from django.contrib.auth.views import LogoutView
+
+app_name = 'ts_guard'
+
+urlpatterns = [
+    path('logout', views.logout_view, name='logout'),
+    path('dashboard', views.dashboard_view, name='Dashboard'),
+    path('create-ticket', views.add_ticket, name="CreateTicket"),
+    path('search-student', views.student_search, name="SearchStudent"),
+    path('violation-types', views.violation_types_view, name="ViolationTypes"),
+    path('ticket/<int:ticket_id>/ticket-details', views.ticket_details_view, name="TicketDetails"),
+    path('ticket/<int:ticket_id>/update/id-status', views.update_id_status, name="IDStatus"),
+    path('profile/update/<int:ssio_id>', views.update_profile, name='UpdateProfile'),
+    path('user/update/<int:ssio_id>', views.update_user, name='UpdateUser'),
+    path('user/delete/<int:ssio_id>', views.delete_user, name='DeleteUser'),
+]
