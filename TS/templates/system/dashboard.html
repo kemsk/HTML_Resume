@@ -53,8 +53,7 @@
                 <td>
                     {% if ticket.uniform_violation %}Uniform Violation<br> {% endif %}
                     {% if ticket.dress_code_violation %}Dress Code Violation<br> {% endif %}
-                    {% if ticket.id_violation %}ID Violation<br> {% endif %}
-                    {% if ticket.id_not_claimed_violation %}ID Not Claimed Violation{% endif %}
+                    {% if ticket.id_violation %}ID Violation{% endif %}
                 </td>
                 <td>{{ ticket.date_created }}</td>
                 <td {% if ticket.ticket_status != 1 and ticket.ticket_status != 2 %} class="status-pending"
@@ -114,5 +113,4 @@
         {% endif %}
     </ul>
 </div>
-
 {% endblock %}

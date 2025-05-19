@@ -13,6 +13,7 @@ import os, base64, io, hashlib, json, logging, traceback
 
 logger = logging.getLogger(__name__)
 
+
 def hash_password(value):
     salt = os.urandom(16)
     value_salt_combined = value.encode('utf-8') + salt
@@ -26,9 +27,9 @@ def paginate_queryset(request, queryset, per_page):
     paginator = Paginator(queryset, per_page)
     return paginator.get_page(page_number)
 
-
 def active_list():
     return AcademicYear.objects.filter(active=1)
+
 
 
 def require_admin(request):
@@ -107,6 +108,9 @@ def add_ticket(request):
             fname = data.get('fname')
             mname = data.get('mname')
             lname = data.get('lname')
+            college = data.get('college')
+            course = data.get('course')
+            year_level = data.get('year_level')
 
             # Handle base64 photo from JSON
             photo_file = None
@@ -137,9 +141,17 @@ def add_ticket(request):
                     print("Drive upload failed:", str(e))
                     return JsonResponse({'error': f'Photo upload failed: {str(e)}'}, status=500)
 
+            
             student, _ = Student.objects.get_or_create(
                 student_id=student_id,
-                defaults={'first_name': fname, 'middle_name': mname, 'last_name': lname}
+                defaults={
+                    'first_name': fname, 
+                    'middle_name': mname, 
+                    'last_name': lname,
+                    'college': college if college else 'Not Specified',
+                    'course': course if course else 'Not Specified',
+                    'year_level': year_level if year_level else 1
+                }
             )
 
             Ticket.objects.create(
@@ -392,7 +404,7 @@ def update_profile(request, ssio_id):
         except Exception as e:
             messages.error(request, f"Error updating user details: {str(e)}") # MODIFIED message
 
-        return redirect("ts:UserManagement")
+        return redirect("ts_guard:UserManagement")
 
 @never_cache
 def update_user(request, ssio_id):

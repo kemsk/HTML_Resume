@@ -9,8 +9,14 @@ urlpatterns = [
     path('dashboard', views.dashboard_view, name='Dashboard'),
     path('create-ticket', views.add_ticket, name="CreateTicket"),
     path('search-student', views.student_search, name="SearchStudent"),
+
+
     path('statistics', views.statistics_view, name="Statistics"),
     path('violation-types', views.violation_types_view, name="ViolationTypes"),
+    path('my-statistics', views.user_statistics_view, name='UserStatisticsPage'),
+    path('my-statistics/data', views.user_statistics_data, name='UserStatisticsData'),
+
+
     path('ticket/<int:ticket_id>/ticket-details', views.ticket_details_view, name="TicketDetails"),
     path('ticket/<int:ticket_id>/update/id-status', views.update_id_status, name="IDStatus"),
     path('profile/update/<int:ssio_id>', views.update_profile, name='UpdateProfile'),

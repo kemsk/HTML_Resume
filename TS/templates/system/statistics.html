@@ -1,169 +1,88 @@
 {% extends "ts_index.html" %}
 {% load static %}
 {% block content %}
-<section id="statistics-content">
-  <div class="section-header mb-4" style="background-color: transparent;  box-shadow: none;">
-    <div class="title-section">
-      <i class="fas fa-chart-bar icon"></i> STATISTICS
+<section id="statistics-content" class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center my-3">
+    <h4><i class="fas fa-chart-bar me-2"></i><b>STATISTICS</b></h4>
+    <div class="d-flex gap-3 align-items-center">
+      <select id="timeframe" class="form-select" style="width: 150px;">
+        <option value="day">Today</option>
+        <option value="week">This Week</option>
+        <option value="month">This Month</option>
+        <option value="semester">This Semester</option>
+      </select>
+      <select id="chartType" class="form-select" style="width: 150px;">
+        <option value="doughnut">Pie Chart</option>
+        <option value="bar">Bar Chart</option>
+      </select>
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+        <label class="form-check-label" for="autoRefreshToggle">Auto Refresh</label>
+      </div>
+      <button id="manualRefreshBtn" class="btn btn-outline-primary" disabled>
+        <i class="fas fa-sync-alt"></i> Refresh
+      </button>
     </div>
   </div>
-  <div class="container-fluid">
-    <div class="row mb-3">
-      <div class="col-md-6">
-        <label for="timeframe"><b>Timeframe:</b></label>
-        <select id="timeframe" class="form-select" style="width: 200px; display: inline-block;">
-          <option value="day">Today</option>
-          <option value="week">This Week</option>
-          <option value="month">This Month</option>
-          <option value="semester">This Semester</option>
-        </select>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-md-6">
-        <div class="card p-4 shadow-sm">
-          <h5 class="mb-3">Violator Count</h5>
-          <div id="violator-count" style="font-size: 2em; color: #19387E; font-weight: bold;">0</div>
+
+  <div class="text-end mb-3">
+    <small id="last-updated" class="text-muted"></small>
+  </div>
+
+  <div class="row gy-4">
+    <!-- Violation Statistics -->
+    <div class="col-lg-6">
+      <div class="card p-4 shadow-sm">
+        <h5 class="text-center mb-3">Violation Statistics</h5>
+        <div class="d-flex justify-content-center align-items-center" style="height: 300px;">
+          <canvas id="violationChart" style="max-width: 90%; max-height: 100%;"></canvas>
         </div>
+        <div class="text-center my-3">
+          <strong>Total Violators: </strong><span id="violator-count" style="color:#19387E; font-size: 1.5rem;">0</span>
+        </div>
+        <table class="table table-sm text-center">
+          <thead><tr><th>Violation Type</th><th>Count</th></tr></thead>
+          <tbody id="violation-details-body"></tbody>
+        </table>
       </div>
     </div>
-    <div class="row mt-4">
-      <div class="col-md-8">
-        <div class="card p-4 shadow-sm">
-          <h5 class="mb-3">Violation Types</h5>
-          <canvas id="violationChart"></canvas>
+
+    <!-- User Statistics -->
+    <div class="col-lg-6">
+      <div class="card p-4 shadow-sm">
+        <h5 class="text-center mb-3">User Statistics</h5>
+        <div class="row text-center mb-4">
+          <div class="col">
+            <i class="fas fa-ticket-alt text-primary"></i><br>
+            <strong>Tickets Issued</strong><br>
+            <span id="my-tickets" style="color:#19387E; font-size: 1.5rem;">0</span>
+          </div>
+          <div class="col">
+            <i class="fas fa-exclamation-triangle text-warning"></i><br>
+            <strong>IDs Not Claimed</strong><br>
+            <span id="my-ids-not-claimed" style="color:#19387E; font-size: 1.5rem;">0</span>
+          </div>
+          <div class="col">
+            <i class="fas fa-id-card text-success"></i><br>
+            <strong>IDs Returned</strong><br>
+            <span id="my-ids-returned" style="color:#19387E; font-size: 1.5rem;">0</span>
+          </div>
+        </div>
+        <h6 class="text-center mb-2">Current User: <span id="current-user-name">Loading...</span></h6>
+        <table class="table table-sm text-center">
+          <thead><tr><th>Violation Type</th><th>Count</th></tr></thead>
+          <tbody id="my-violation-details"></tbody>
+        </table>
+        
+        <h6 class="text-center mt-4 mb-2">All Users</h6>
+        <div class="table-responsive">
+          <table class="table table-sm text-center">
+            <thead><tr><th>User</th><th>Total Tickets</th><th>ID Violations</th><th>Uniform Violations</th><th>Dress Code Violations</th></tr></thead>
+            <tbody id="all-users-stats"></tbody>
+          </table>
         </div>
       </div>
     </div>
   </div>
 </section>
-
-<!-- Include Chart.js from CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const timeframeSelect = document.getElementById('timeframe');
-    const violatorCount = document.getElementById('violator-count');
-    let violationChart = null;
-
-    function fetchStats(timeframe) {
-      Promise.all([
-        fetch(`/xu-entry-violation/statistics?timeframe=${timeframe}`).then(response => response.json()),
-        fetch(`/xu-entry-violation/violation-types?timeframe=${timeframe}`).then(response => response.json())
-      ]).then(([countData, typesData]) => {
-        // Update violator count
-        violatorCount.textContent = countData.count;
-
-        // Update violation types chart
-        const ctx = document.getElementById('violationChart').getContext('2d');
-        
-        // Destroy existing chart if it exists
-        if (violationChart) {
-          violationChart.destroy();
-        }
-
-        // Create new chart with gradient colors and more styling
-        const gradient1 = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient1.addColorStop(0, 'rgba(255, 99, 132, 0.8)');
-        gradient1.addColorStop(1, 'rgba(255, 99, 132, 0.2)');
-
-        const gradient2 = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient2.addColorStop(0, 'rgba(54, 162, 235, 0.8)');
-        gradient2.addColorStop(1, 'rgba(54, 162, 235, 0.2)');
-
-        const gradient3 = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient3.addColorStop(0, 'rgba(255, 206, 86, 0.8)');
-        gradient3.addColorStop(1, 'rgba(255, 206, 86, 0.2)');
-
-        const gradient4 = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient4.addColorStop(0, 'rgba(75, 192, 192, 0.8)');
-        gradient4.addColorStop(1, 'rgba(75, 192, 192, 0.2)');
-
-        violationChart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: typesData.labels,
-            datasets: [{
-              label: 'Violation Counts',
-              data: typesData.counts,
-              backgroundColor: [gradient1, gradient2, gradient3, gradient4],
-              borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)'
-              ],
-              borderWidth: 2,
-              borderRadius: 10,
-              hoverBackgroundColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)'
-              ]
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              title: {
-                display: true,
-                text: 'Violation Types Breakdown',
-                font: {
-                  size: 18,
-                  weight: 'bold'
-                }
-              },
-              legend: {
-                display: false
-              },
-              tooltip: {
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                titleColor: 'white',
-                bodyColor: 'white',
-                borderColor: 'rgba(255,255,255,0.2)',
-                borderWidth: 1
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                grid: {
-                  color: 'rgba(0,0,0,0.1)'
-                },
-                title: {
-                  display: true,
-                  text: 'Number of Violations',
-                  font: {
-                    size: 12,
-                    weight: 'bold'
-                  }
-                }
-              },
-              x: {
-                grid: {
-                  display: false
-                }
-              }
-            },
-            animation: {
-              duration: 1500,
-              easing: 'easeOutQuart'
-            }
-          }
-        });
-      });
-    }
-
-    // Initial load
-    fetchStats(timeframeSelect.value);
-
-    // Event listener for timeframe changes
-    timeframeSelect.addEventListener('change', function() {
-      fetchStats(this.value);
-    });
-  });
-</script>
 {% endblock %}

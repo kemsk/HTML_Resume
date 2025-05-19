@@ -112,6 +112,7 @@
                   <div class="mb-4">
                     <label for="photo-proof" class="mb-2" style="color: #333;"><b>Photo Proof:</b></label>
                     <input type="file" id="photo-proof" name="photo" capture="proof" accept=".jpg,.jpeg,.png,.svg" class="form-control" style="border: 1px solid #DCDCDD; padding-left: 0;">
+                    <small class="text-muted mt-1" style="display: block;">Only PNG and JPEG files is allowed to be uploaded</small>
                   </div>
                 </div>
                 
@@ -123,8 +124,8 @@
                 </div>
                   <!-- Action Buttons - Aligned to the right -->
                 <div class="d-flex justify-content-end mt-4">
-                  <a href="{% url 'ts:SearchStudent' %}" class="btn btn-outline-danger me-2" style="width: auto;">Cancel</a>
-                  <button type="submit" class="btn btn-primary" style="width: auto;">Confirm</button>              
+                  <a href="{% url 'ts_guard:SearchStudent' %}" class="btn btn-outline-danger me-2" style="width: auto;">Cancel</a>
+                  <button type="submit" class="btn btn-primary" style="width: auto;">Confirm</button>
                 </div>
               </div>
             </div>

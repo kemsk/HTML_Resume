@@ -2,7 +2,7 @@ from django.urls import path
 from . import views
 from django.contrib.auth.views import LogoutView
 
-app_name = 'ts'
+app_name = 'ts_guard'
 
 urlpatterns = [
     path('logout', views.logout_view, name='logout'),
@@ -13,6 +13,5 @@ urlpatterns = [
     path('ticket/<int:ticket_id>/ticket-details', views.ticket_details_view, name="TicketDetails"),
     path('ticket/<int:ticket_id>/update/id-status', views.update_id_status, name="IDStatus"),
     path('profile/update/<int:ssio_id>', views.update_profile, name='UpdateProfile'),
-    path('user/update/<int:ssio_id>', views.update_user, name='UpdateUser'),
-    path('user/delete/<int:ssio_id>', views.delete_user, name='DeleteUser'),
+    path('user-management', views.user_management_view, name="UserManagement"),
 ]

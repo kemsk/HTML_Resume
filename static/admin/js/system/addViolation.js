@@ -1,4 +1,4 @@
-  // JWT Authentication Functions
+// JWT Authentication Functions
 function getJWTToken() {
     return sessionStorage.getItem('jwt_token') || '{{ request.session.jwt_token|default:"" }}' || '';
 }
@@ -70,6 +70,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Define the form variable here AFTER DOM content is loaded
     const form = document.getElementById('add-violation-form');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = document.getElementById('submitText');
+    const submitSpinner = document.getElementById('submitSpinner');
+    const loadingOverlay = document.getElementById('loadingOverlay');
 
     form.addEventListener("submit", async function(event) {
         event.preventDefault(); // stop default form post
@@ -80,6 +84,14 @@ document.addEventListener('DOMContentLoaded', function() {
             window.ModalUtils.showErrorModal("Please select at least one violation type before submitting.");
             return false; // Stop form submission
         }
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitText.textContent = 'Processing...';
+        submitSpinner.classList.remove('d-none');
+        loadingOverlay.style.display = 'flex';
+        document.body.classList.add('loading-active');
+        loadingOverlay.style.pointerEvents = 'auto';
 
         // Gather all fields
         const ticket_id = document.getElementById("ticket_id").value;
@@ -155,6 +167,14 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             window.ModalUtils.showErrorModal("Error: " + error.message);
+            // Reset loading state on error
+            if (submitBtn && submitText && submitSpinner && loadingOverlay) {
+                submitBtn.disabled = false;
+                submitText.textContent = 'Confirm';
+                submitSpinner.classList.add('d-none');
+                loadingOverlay.style.display = 'none';
+                document.body.classList.remove('loading-active');
+            }
         });
     });
 });
@@ -184,52 +204,107 @@ function get_ticket_data(ticketId) {
   });
 }
     
-function send_ticket(ticket, student){
+function send_ticket(ticket, student) {
+  // Parse course and year from the course_year string (format: "COURSE - YEAR")
+  const courseYearParts = student.course_year ? student.course_year.split(' - ') : [];
+  const course = courseYearParts.length > 0 ? courseYearParts[0].trim() : '';
+  const yearLevel = courseYearParts.length > 1 ? courseYearParts[1].trim() : '';
+
+  // Create the student data for the ticket details
+  const studentDetails = {
+    student_id: student.student_id,
+    first_name: student.first_name,
+    last_name: student.last_name,
+    middle_name: student.middle_name || '',
+    college: student.college || '',
+    course: course,
+    year_level: yearLevel
+  };
+
+  // Format the ticket data to match the backend's expected structure
+  // This is the data that will be sent to the other system
+  const ticketData = {
+    ticket: {
+      ticket_id: ticket.ticket_id,
+      uniform_violation: ticket.violations.includes('uniform_violation'),
+      dress_code_violation: ticket.violations.includes('dress_code_violation'),
+      id_violation: ticket.violations.includes('id_violation'),
+      id_not_claimed_violation: ticket.violations.includes('id_not_claimed_violation'),
+      id_status: ticket.id_status || false,
+      ticket_status: ticket.ticket_status || 'pending',
+      remarks: ticket.remarks || '',
+      photo_path: ticket.photo_path || '',
+      date_created: new Date().toISOString(),
+      date_validated: null,
+      acad_year: 1, // You need to set the correct academic year ID
+      semester: 1,  // You need to set the correct semester ID
+      ssio_id: 1    // This should come from the actual logged-in user
+    },
+    student: {
+      student_id: student.student_id,
+      first_name: student.first_name,
+      last_name: student.last_name,
+      middle_name: student.middle_name || ''
+    },
+    // Include additional details for local use only (not sent to the other system)
+    _details: studentDetails
+  };
+
   fetch(`http://localhost:8001/evs/dev/api/ticket-submission`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "Authorization": `Bearer ${getJWTToken()}`,
+      "X-CSRFToken": getCSRFToken()
     },
-    body: JSON.stringify({
-      ticket: ticket,
-      student: student
-    })
+    body: JSON.stringify(ticketData),
+    credentials: 'include'
   })
-  .then(response => {
-    if (response.ok)
-    {
+  .then(async response => {
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('Server response:', data);
+      throw new Error(data.error || 'Failed to submit ticket');
+    }
+    return data;
+  })
+  .then(data => {
+    console.log('Ticket submission successful:', data);
+    if (data.success) {
       window.ModalUtils.showSuccessModal('Ticket Submitted Successfully.');
       setTimeout(() => {
         window.ModalUtils.hideAllModals();
         window.location.href='{% url "ts:SearchStudent" %}';
       }, 1500);
+    } else {
+      window.ModalUtils.showErrorModal(data.error || "Could not submit ticket data.");
     }
   })
   .catch(error => {
-    console.error("Failed to submit ticket to OSA", error);
-    window.ModalUtils.showErrorModal("Could not submit ticket data.");
+    console.error("Failed to submit ticket:", error);
+    // Reset loading state
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = document.getElementById('submitText');
+    const submitSpinner = document.getElementById('submitSpinner');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    
+    if (submitBtn && submitText && submitSpinner && loadingOverlay) {
+      submitBtn.disabled = false;
+      submitText.textContent = 'Confirm';
+      submitSpinner.classList.add('d-none');
+      loadingOverlay.style.display = 'none';
+      document.body.classList.remove('loading-active');
+    }
+    
+    window.ModalUtils.showErrorModal(`Error: ${error.message || 'Failed to submit ticket. Please try again.'}`);
   });
 }
 
 function getCSRFToken() {
-  // Try to get from cookie (Django default)
-  let token = '';
-  const cookieString = document.cookie;
-  if (cookieString) {
-    const csrfCookie = cookieString
-      .split(';')
-      .map(cookie => cookie.trim())
-      .find(cookie => cookie.startsWith('csrftoken='));
-    if (csrfCookie) {
-      token = csrfCookie.split('=')[1];
-    }
-  }
-  // Fallback: try to get from hidden input (for forms rendered by Django)
-  if (!token) {
-    const input = document.querySelector('[name=csrfmiddlewaretoken]');
-    if (input) token = input.value;
-  }
-  return token;
+  return document.cookie
+    .split(";")
+    .find(c => c.trim().startsWith("csrftoken="))
+    ?.split("=")[1] || "";
 }
 
 // Read query parameters and localStorage on page load

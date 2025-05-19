@@ -1,3 +1,4 @@
+const django_jwt_token = "{{ request.session.jwt_token|default:'' }}";
 document.addEventListener('DOMContentLoaded', function () {
   function updateDateTime() {
     const now = new Date();

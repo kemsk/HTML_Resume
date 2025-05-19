@@ -239,7 +239,7 @@ function user_edit() {
 
   const data = { user_id: userId, fname, lname, email, role };
 
-  fetch(`/admin/xu-entry-violation/user/update/${userId}`, {
+  fetch(`/xu-entry-violation/user/update/${userId}`, {
     method: "PATCH",
     headers: {
       'Content-Type': 'application/json',

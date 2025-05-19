@@ -1,0 +1,76 @@
+{% extends "tsg_index.html" %}
+{% load static %}
+
+<style>
+  #viewUserModal .modal-body p {
+    text-align: center;
+    margin: 10px 0;
+  }
+
+  #viewUserModal .modal-body span {
+    display: inline-block;
+    margin-top: 5px;
+    font-weight: 500;
+  }
+</style>
+
+{% block content %}
+<main id="manage-users-content">
+  <div class="section-header mb-4 d-flex justify-content-between align-items-center"
+    style="background-color: transparent; box-shadow: none;">
+    <div class="title-section d-flex align-items-center">
+      <i class="fa-solid fa-gear" aria-hidden="true"></i>
+      SETTINGS
+    </div>
+  </div>
+
+  <div class="row justify-content-center" style="background-color: transparent;">
+    <!-- Centered Edit Profile Container -->
+    <div class="col-md-8 d-flex justify-content-center">
+      <!-- Edit Profile Container (Visible by default) -->
+      <div id="edit-profile-container" class="card shadow-sm mb-4 w-100" style="max-width: 700px;">
+        <div class="card-header bg-light">
+          <h5 class="mb-0"><strong>Edit Profile</strong></h5>
+        </div>
+        <div class="card-body">
+          <form id="static-edit-profile-form" method="POST" action="{% url 'ts_guard:UpdateProfile' request.session.ssio_user_id %}">{% csrf_token %}
+            <input type="hidden" name="ssio_id" id="static-profile-id" value="{{ request.session.ssio_user_id }}">
+
+            <div class="mb-3 row">
+              <div class="col-md-6">
+                <label for="static-profile-fname" class="form-label">First Name</label>
+                <input type="text" name="fname" id="static-profile-fname" class="form-control" value="{{ request.session.ssio_fname }}">
+              </div>
+              <div class="col-md-6">
+                <label for="static-profile-lname" class="form-label">Last Name</label>
+                <input type="text" name="lname" id="static-profile-lname" class="form-control" value="{{ request.session.ssio_lname }}">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="static-profile-email" class="form-label">Email</label>
+              <input type="email" name="email" id="static-profile-email" class="form-control" value="{{ request.session.ssio_email }}" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="static-profile-password" class="form-label">New Password (leave blank to keep current)</label>
+              <input type="password" name="password" id="static-profile-password" class="form-control">
+            </div>
+
+            <div class="mb-3">
+              <label for="static-profile-pin" class="form-label">New PIN (leave blank to keep current)</label>
+              <input type="password" maxlength="6" pattern="\d{6}" inputmode="numeric" name="ssio_userpin"
+                id="static-profile-pin" class="form-control">
+            </div>
+
+           <div class="d-flex justify-content-end gap-2">
+              <button type="button" class="btn btn-outline-secondary" onclick="window.location.href='{% url 'ts_guard:Dashboard' %}';">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

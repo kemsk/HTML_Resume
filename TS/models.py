@@ -14,6 +14,10 @@ class Student(models.Model):
     first_name = models.CharField(max_length=200)
     last_name = models.CharField(max_length=200)
     middle_name = models.CharField(max_length=200, blank=True)
+    college = models.CharField(max_length=200)
+    course = models.CharField(max_length=200)
+    year_level = models.IntegerField()
+
 
 class Violation(models.Model):
     violation_id = models.AutoField(primary_key=True)

@@ -9,6 +9,19 @@ python manage.py migrate --noinput
 # password = 1234
 # pin = 123456
 
+#INSERT INTO TS_student VALUES 
+#(1, 'Alice', 'Smith', 'Marie', 'Engineering', 'Computer Science', 1),
+#(2, 'Bob', 'Johnson', '', 'Business', 'Marketing', 2),
+#(3, 'Charlie', 'Brown', 'Lee', 'Arts', 'History', 3),
+#(4, 'Diana', 'Prince', 'Grace', 'Science', 'Biology', 4),
+#(5, 'Ethan', 'Clark', 'James', 'Engineering', 'Mechanical', 1);
+#INSERT INTO TS_student VALUES 
+#(1, 'Alice', 'Smith', 'Marie'),
+#(2, 'Bob', 'Johnson', ''),
+#(3, 'Charlie', 'Brown', 'Lee'),
+#(4, 'Diana', 'Prince', 'Grace'),
+#(5, 'Ethan', 'Clark', 'James');
+
 mysql -h "${DB_HOST}" -u "root" -p"$DB_ROOT_PASSWORD" "$DB_NAME" <<EOF
 
 INSERT INTO TS_Users_role values
@@ -21,11 +34,11 @@ INSERT INTO TS_Users_user (password, ssio_id, ssio_username, ssio_email, ssio_fn
 ('u4nFkKGePzVWWOsVg7SLBTUwYzU3ZWU5ZjE5OTMzOWRjZTY1YTYyNGI0YTA4MWQzZDE4OTc1YTVlYThiN2UxNTZmZTczZDRkMTJlODIyOTM=', 3, 'xussio_admin', 'xu.osa.ssio.evs@gmail.com', 'XU', 'OSA', 'qlClV1fZ41+1f61JZRdp1GZmOGFhNDc1MGEzYjM3YzAxOGIxZWZlNDI5NzYyYWQwZDA2ZmIxY2IyN2IyMDZlM2RkM2JiZmRmMzgzMDhkNjg=', 1);
 
 INSERT INTO TS_student VALUES 
-(1, 'Alice', 'Smith', 'Marie'),
-(2, 'Bob', 'Johnson', ''),
-(3, 'Charlie', 'Brown', 'Lee'),
-(4, 'Diana', 'Prince', 'Grace'),
-(5, 'Ethan', 'Clark', 'James');
+(1, 'Alice', 'Smith', 'Marie', 'Engineering', 'Computer Science', 1),
+(2, 'Bob', 'Johnson', '', 'Business', 'Marketing', 2),
+(3, 'Charlie', 'Brown', 'Lee', 'Arts', 'History', 3),
+(4, 'Diana', 'Prince', 'Grace', 'Science', 'Biology', 4),
+(5, 'Ethan', 'Clark', 'James', 'Engineering', 'Mechanical', 1);
 
 INSERT INTO TS_violation VALUES
 (1, 'Uniform Violation'),

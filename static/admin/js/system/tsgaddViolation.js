@@ -70,6 +70,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Define the form variable here AFTER DOM content is loaded
     const form = document.getElementById('add-violation-form');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = document.getElementById('submitText');
+    const submitSpinner = document.getElementById('submitSpinner');
+    const loadingOverlay = document.getElementById('loadingOverlay');
 
     form.addEventListener("submit", async function(event) {
         event.preventDefault(); // stop default form post
@@ -80,6 +84,14 @@ document.addEventListener('DOMContentLoaded', function() {
             window.ModalUtils.showErrorModal("Please select at least one violation type before submitting.");
             return false; // Stop form submission
         }
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitText.textContent = 'Processing...';
+        submitSpinner.classList.remove('d-none');
+        loadingOverlay.style.display = 'flex';
+        document.body.classList.add('loading-active');
+        loadingOverlay.style.pointerEvents = 'auto';
 
         // Gather all fields
         const ticket_id = document.getElementById("ticket_id").value;
@@ -122,8 +134,6 @@ document.addEventListener('DOMContentLoaded', function() {
             fname,
             mname,
             lname,
-            college,
-            course_year,
             photo: photoBase64,
             photo_name: photoName
         };

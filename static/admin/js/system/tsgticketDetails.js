@@ -1,4 +1,3 @@
-const token = sessionStorage.getItem('jwt_token') || '{{ request.session.jwt_token }}' || '';
 document.addEventListener('DOMContentLoaded', () => {
 
   function update_id(ticket_id, status) {

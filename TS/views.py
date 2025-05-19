@@ -10,6 +10,11 @@ from TS_Users.models import User, Role
 from django.views.decorators.cache import never_cache
 from .drive_service import upload_file_to_drive
 import os, base64, io, hashlib, json, logging, traceback
+from datetime import datetime, timedelta
+from django.utils.timezone import now
+from django.db.models import Count
+from django.http import JsonResponse
+from .models import Violation
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +35,8 @@ def paginate_queryset(request, queryset, per_page):
 def active_list():
     return AcademicYear.objects.filter(active=1)
 
+
+
 def require_admin(request):
     users_role = request.session.get('users_role')
     if users_role != 'Admin':
@@ -48,9 +55,10 @@ def require_personnel(request):
 
 @never_cache
 def dashboard_view(request):
+    # Enforce admin-only access
     if not require_admin(request):
         return redirect('ts_users:login') 
-    
+
     ay_id = active_list()
 
     student_name = request.GET.get('student_name', '')
@@ -83,6 +91,7 @@ def dashboard_view(request):
 
     return render(request, 'system/dashboard.html', {'tickets': page_obj})
 
+
 @never_cache
 def add_ticket(request):
     if not require_admin(request):
@@ -104,6 +113,13 @@ def add_ticket(request):
             fname = data.get('fname')
             mname = data.get('mname')
             lname = data.get('lname')
+            college = data.get('college')
+            course_year = data.get('course_year', '')  # Get the combined course and year
+            
+            # Parse course and year from the combined field (format: "COURSE - YEAR")
+            course_parts = course_year.split(' - ') if course_year else []
+            course = course_parts[0].strip() if len(course_parts) > 0 else ''
+            year_level = int(course_parts[1]) if len(course_parts) > 1 and course_parts[1].isdigit() else 1
 
             # Handle base64 photo from JSON
             photo_file = None
@@ -134,19 +150,59 @@ def add_ticket(request):
                     print("Drive upload failed:", str(e))
                     return JsonResponse({'error': f'Photo upload failed: {str(e)}'}, status=500)
 
-            student, _ = Student.objects.get_or_create(
+            
+            # Default values for student creation
+            student_data = {
+                'first_name': fname,
+                'last_name': lname,
+                'year_level': int(year_level) if year_level else 1  # Ensure year_level is an integer
+            }
+            
+            # Only add middle_name if it exists
+            if mname:
+                student_data['middle_name'] = mname
+                
+            # Only add college and course if they exist and are not empty
+            if college and college.strip():
+                student_data['college'] = college.strip()
+            if course and course.strip():
+                student_data['course'] = course.strip()
+            
+            # Create or update the student
+            student, created = Student.objects.update_or_create(
                 student_id=student_id,
-                defaults={'first_name': fname, 'middle_name': mname, 'last_name': lname}
+                defaults=student_data
             )
 
+            # Check for all three violation types
+            has_uniform_violation = 'uniform_violation' in violations
+            has_dress_code_violation = 'dress_code_violation' in violations
+            has_id_violation = 'id_violation' in violations
+            
+            # Check if any violation type is present
+            has_violation = has_uniform_violation or has_dress_code_violation or has_id_violation
+            
+            # Set id_not_claimed_violation based on whether this student already has an unclaimed ID
+            id_not_claimed = False
+            # For any violation type, the ID is taken and needs to be claimed back
+            if has_violation:  # If any violation exists
+                # Check if this student already has any unclaimed ID
+                existing_unclaimed = Ticket.objects.filter(
+                    student_id=student_id,
+                    id_status=0  # 0 means unclaimed
+                ).exists()
+                
+                # Only set to True if no existing unclaimed ID for this student
+                id_not_claimed = not existing_unclaimed
+            
             Ticket.objects.create(
                 ticket_id=ticket_id,
-                uniform_violation='uniform_violation' in violations,
-                dress_code_violation='dress_code_violation' in violations,
-                id_violation='id_violation' in violations,
-                id_not_claimed_violation=False,
+                uniform_violation=has_uniform_violation,
+                dress_code_violation=has_dress_code_violation,
+                id_violation=has_id_violation,
+                id_not_claimed_violation=id_not_claimed,  # Only True for new students with ID violations
                 ssio_id=request.session.get('ssio_user_id'),
-                id_status=0,
+                id_status=0,  # 0 means unclaimed
                 ticket_status=0,
                 remarks=remarks or "N/A",
                 student= Student.objects.get(pk=student_id), 
@@ -203,12 +259,23 @@ def violation_types_view(request):
             queryset = queryset.filter(acad_year=ay, semester=ay.semester)
 
     # Count violation types
+    uniform_violations = queryset.filter(uniform_violation=True).count()
+    dress_code_violations = queryset.filter(dress_code_violation=True).count()
+    id_violations = queryset.filter(id_violation=True).count()
+    
+    # Count unique students with unclaimed IDs - for any violation type
+    unclaimed_ids = queryset.filter(id_status=0).values('student').distinct().count()
+    
+    # Count unique students who violated rules (total violators)
+    total_violators = queryset.values('student').distinct().count()
+    
     violation_counts = {
-        'Uniform Violation': queryset.filter(uniform_violation=True).count(),
-        'Dress Code Violation': queryset.filter(dress_code_violation=True).count(),
-        'ID Violation': queryset.filter(id_violation=True).count(),
-        'ID Not Claimed': queryset.filter(id_not_claimed_violation=True).count()
+        'Uniform Violation': uniform_violations,
+        'Dress Code Violation': dress_code_violations,
+        'ID Violation': id_violations
     }
+    
+    # Keep ID Not Claimed as a separate value, not as a violation type
 
     # Prepare data for chart
     labels = list(violation_counts.keys())
@@ -216,7 +283,9 @@ def violation_types_view(request):
 
     return JsonResponse({
         'labels': labels,
-        'counts': counts
+        'counts': counts,
+        'unclaimed_ids': unclaimed_ids,  # Send ID Not Claimed as a separate value
+        'total_violators': total_violators  # Total number of unique students who violated rules
     })
 
 @never_cache
@@ -224,20 +293,38 @@ def ticket_details_view(request, ticket_id):
     if not require_admin(request):
         return redirect('ts_users:login') 
     
-    ticket = Ticket.objects.get(ticket_id=ticket_id)
-    student = ticket.student
-    violations = Violation.objects.all()
+    try:
+        # Get the ticket with related student data
+        ticket = Ticket.objects.select_related('student').get(ticket_id=ticket_id)
+        student = ticket.student
+        
+        # Make sure we have default values for all fields
+        student_data = {
+            'student_id': student.student_id,
+            'first_name': student.first_name or '',
+            'last_name': student.last_name or '',
+            'middle_name': student.middle_name or '',
+            'college': student.college or 'Not Specified',
+            'course': student.course or 'Not Specified',
+            'year_level': student.year_level if student.year_level is not None else 1
+        }
+        
+        user = User.objects.get(pk=ticket.ssio_id)
+        reported_by = f'{user.ssio_lname}, {user.ssio_fname}'
 
-    user = User.objects.get(pk=ticket.ssio_id)
-
-    name = f'{user.ssio_lname}, {user.ssio_fname}'
-
-    return render(request, 'system/ticket-details.html', {
-        'ticket': ticket,
-        'student': student,
-        'violations': violations,
-        'reported_by': name
-    })
+        return render(request, 'system/ticket-details.html', {
+            'ticket': ticket,
+            'student': student_data,  # Pass the processed student data
+            'violations': Violation.objects.all(),
+            'reported_by': reported_by
+        })
+        
+    except Ticket.DoesNotExist:
+        messages.error(request, 'Ticket not found.')
+        return redirect('ts:Dashboard')
+    except Exception as e:
+        messages.error(request, f'An error occurred: {str(e)}')
+        return redirect('ts:Dashboard')
 
 @never_cache
 def update_id_status(request, ticket_id):
@@ -253,9 +340,16 @@ def update_id_status(request, ticket_id):
 
             name = f'{user.ssio_lname}, {user.ssio_fname}'
             ticket = Ticket.objects.get(pk=ticket_id)
+            
+            # Update ID status
             ticket.id_status = new_status
             ticket.id_returned_by = name
             ticket.id_returned_date = datetime.now()
+            
+            # If ID is being returned (status changed from 0), update id_not_claimed_violation to False
+            if new_status != 0 and ticket.id_violation:
+                ticket.id_not_claimed_violation = False
+                
             ticket.save()
 
             return JsonResponse({'message': 'ID Status updated successfully'})
@@ -263,6 +357,7 @@ def update_id_status(request, ticket_id):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
         
+
 @never_cache
 def user_management_view(request):
     if not require_admin(request):
@@ -421,7 +516,7 @@ def update_user(request, ssio_id):
 @never_cache
 def delete_user(request, ssio_id):
     if not require_admin(request):
-        return redirect('ts_users:login')  
+        return redirect('ts_users:login') 
     
     if request.method == 'DELETE':
         try:
@@ -459,6 +554,7 @@ def logout_view(request):
     return response
 
 
+
 def search_by_drive_file_id(request):
     file_id = request.GET.get('file_id')
     if not file_id:
@@ -477,3 +573,144 @@ def search_by_drive_file_id(request):
         return JsonResponse({'ticket': data})
     except Ticket.DoesNotExist:
         return JsonResponse({'error': 'No ticket found for the provided file ID.'}, status=404)
+
+def statistics(request):
+    timeframe = request.GET.get('timeframe', 'day')
+    start, end = get_timeframe_range(timeframe)
+    count = Violation.objects.filter(date_committed__range=(start, end)).count()
+    return JsonResponse({'count': count})
+
+def violation_types(request):
+    timeframe = request.GET.get('timeframe', 'day')
+    start, end = get_timeframe_range(timeframe)
+
+    queryset = Ticket.objects.filter(date_created__range=(start, end))
+
+    labels = [
+        'ID Violation',
+        'Uniform Violation',
+        'Dress Code Violation'
+    ]
+
+    counts = [
+        queryset.filter(id_violation=True).count(),
+        queryset.filter(uniform_violation=True).count(),
+        queryset.filter(dress_code_violation=True).count()
+    ]
+
+    return JsonResponse({'labels': labels, 'counts': counts})
+
+
+@never_cache
+def user_statistics_view(request):
+    if not request.session.get('ssio_user_id'):
+        return redirect('ts_users:login')
+    return render(request, 'system/user_statistics.html')
+
+
+@never_cache
+def user_statistics_data(request):
+    if not request.session.get('ssio_user_id'):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    timeframe = request.GET.get('timeframe', 'day')
+    ssio_user_id = request.session.get('ssio_user_id')
+
+    today = now()
+    if timeframe == 'day':
+        start = today.replace(hour=0, minute=0, second=0)
+    elif timeframe == 'week':
+        start = today - timedelta(days=today.weekday())
+        start = start.replace(hour=0, minute=0, second=0)
+    elif timeframe == 'month':
+        start = today.replace(day=1, hour=0, minute=0, second=0)
+    elif timeframe == 'semester':
+        start = datetime(today.year, 1 if today.month <= 6 else 7, 1, tzinfo=today.tzinfo)
+    else:
+        return JsonResponse({'error': 'Invalid timeframe'}, status=400)
+
+    end = today
+
+    # Get tickets issued by this user
+    user_tickets = Ticket.objects.filter(ssio_id=ssio_user_id, date_created__range=(start, end))
+    
+    # Get all tickets in the system for the time period (regardless of who issued them)
+    all_tickets = Ticket.objects.filter(date_created__range=(start, end))
+    
+    # Get current user's name
+    from django.contrib.auth.models import User
+    current_user = User.objects.filter(username=ssio_user_id).first()
+    current_user_name = f"{current_user.first_name} {current_user.last_name}" if current_user else ssio_user_id
+    
+    # Get all users who have issued tickets in this time period
+    all_users = Ticket.objects.filter(date_created__range=(start, end)).values('ssio_id').distinct()
+
+    # Count statistics for all tickets in the system
+    total_tickets = all_tickets.count()  # All tickets in the system
+    ids_returned = all_tickets.exclude(id_returned_date=None).count()  # All returned IDs
+    
+    # Count unique students with unclaimed IDs (system-wide) - for any violation type
+    ids_not_claimed = all_tickets.filter(id_status=0).values('student').distinct().count()
+
+    # Count system-wide violations
+    system_violation_counts = {
+        'ID Violation': all_tickets.filter(id_violation=True).count(),
+        'Uniform Violation': all_tickets.filter(uniform_violation=True).count(),
+        'Dress Code Violation': all_tickets.filter(dress_code_violation=True).count()
+    }
+    
+    # Keep ID Not Claimed as a separate value, not as a violation type
+    
+    # Collect statistics for all users
+    all_users_stats = []
+    for user_data in all_users:
+        user_id = user_data['ssio_id']
+        # Use the first name (fname) of the user
+        try:
+            # Try to get the user's first name from the SSIO model
+            from TS.models import SSIO
+            ssio_user = SSIO.objects.filter(ssio_id=user_id).first()
+            if ssio_user and ssio_user.fname and ssio_user.fname.strip():
+                user_name = ssio_user.fname  # Use the first name
+            else:
+                # If no SSIO user found, try to get from User model
+                user = User.objects.filter(username=user_id).first()
+                if user and user.first_name and user.first_name.strip():
+                    user_name = user.first_name  # Use the first name from User model
+                else:
+                    # If no first name found, use the user_id
+                    user_name = user_id
+        except Exception as e:
+            print(f"Error getting user's first name: {e}")
+            user_name = user_id
+        
+        # Get tickets issued by this user
+        user_tix = Ticket.objects.filter(ssio_id=user_id, date_created__range=(start, end))
+        
+        # Count violations by this user
+        user_stats = {
+            'user_id': user_id,
+            'user_name': user_name,
+            'total_tickets': user_tix.count(),
+            'ID Violation': user_tix.filter(id_violation=True).count(),
+            'Uniform Violation': user_tix.filter(uniform_violation=True).count(),
+            'Dress Code Violation': user_tix.filter(dress_code_violation=True).count(),
+        }
+        all_users_stats.append(user_stats)
+    
+    # Count user-specific violations (tickets issued by current user)
+    current_user_violation_counts = {
+        'ID Violation': user_tickets.filter(id_violation=True).count(),
+        'Uniform Violation': user_tickets.filter(uniform_violation=True).count(),
+        'Dress Code Violation': user_tickets.filter(dress_code_violation=True).count(),
+    }
+
+    return JsonResponse({
+        'total_tickets': total_tickets,
+        'ids_returned': ids_returned,
+        'violations': system_violation_counts,
+        'ids_not_claimed': ids_not_claimed,  # Send ID Not Claimed as a separate value
+        'user_violations': current_user_violation_counts,
+        'current_user_name': current_user_name,
+        'all_users': all_users_stats
+    })

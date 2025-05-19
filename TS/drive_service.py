@@ -27,9 +27,6 @@ credentials = service_account.Credentials.from_service_account_info(info, scopes
 drive_service = build('drive', 'v3', credentials=credentials)
 
 def upload_file_to_drive(file, filename):
-    """
-    Uploads a file to Google Drive using memory file stream and returns the file ID.
-    """
     print("Uploading to Google Drive folder:", FOLDER_ID)
 
     file_metadata = {

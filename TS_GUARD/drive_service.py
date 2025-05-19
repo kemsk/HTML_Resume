@@ -9,27 +9,20 @@ from django.core.cache import cache
 from django.http import HttpResponse
 from googleapiclient.http import MediaIoBaseDownload
 
-# Load environment variables from .env
 load_dotenv(".env")
 
-# Constants from environment
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 SERVICE_ACCOUNT_FILE = os.environ.get("GOOGLE_SERVICE_ACCOUNT")
 FOLDER_ID = os.environ.get("GOOGLE_DRIVE_FOLDER_ID")
 
-# Validate FOLDER_ID early
 if not FOLDER_ID:
     raise Exception("GOOGLE_DRIVE_FOLDER_ID is not set or loaded from .env!")
 
-# Load credentials and build the Drive API service
 info = json.loads(SERVICE_ACCOUNT_FILE)
 credentials = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
 drive_service = build('drive', 'v3', credentials=credentials)
 
 def upload_file_to_drive(file, filename):
-    """
-    Uploads a file to Google Drive using memory file stream and returns the file ID.
-    """
     print("Uploading to Google Drive folder:", FOLDER_ID)
 
     file_metadata = {
@@ -49,7 +42,6 @@ def upload_file_to_drive(file, filename):
         file_id = uploaded_file.get('id')
         print("Upload successful. File ID:", file_id)
 
-        # Try to make file public and print result
         try:
             drive_service.permissions().create(
                 fileId=file_id,
@@ -59,7 +51,7 @@ def upload_file_to_drive(file, filename):
             print(f"File {file_id} made public.")
         except Exception as perm_err:
             print(f"Failed to set public permission for file {file_id}: {perm_err}")
-            # Still return file_id, but warn admin
+
 
         return file_id
 
@@ -90,7 +82,7 @@ def serve_drive_image(request, ticket_id):
         if allowed_folder and allowed_folder not in parents:
             return HttpResponse("Unauthorized access to file", status=403)
 
-        # Download image
+
         request_media = drive_service.files().get_media(fileId=file_id)
         fh = io.BytesIO()
         downloader = MediaIoBaseDownload(fh, request_media)
@@ -100,7 +92,7 @@ def serve_drive_image(request, ticket_id):
         fh.seek(0)
         image_data = fh.read()
 
-        # Cache result (e.g., for 5 minutes)
+    
         cache.set(cache_key, {'data': image_data, 'mime_type': mime_type}, timeout=300)
 
         return HttpResponse(image_data, content_type=mime_type)
